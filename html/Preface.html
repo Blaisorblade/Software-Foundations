@@ -1,0 +1,336 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+<link href="coqdoc.css" rel="stylesheet" type="text/css"/>
+<title>Preface</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Preface</h1>
+
+<div class="code code-tight">
+</div>
+
+<div class="doc">
+
+</div>
+<div class="code code-tight">
+
+<br/>
+<span class="comment">(*&nbsp;$Date:&nbsp;2011-06-19&nbsp;12:51:02&nbsp;-0400&nbsp;(Sun,&nbsp;19&nbsp;Jun&nbsp;2011)&nbsp;$&nbsp;*)</span><br/>
+
+<br/>
+</div>
+
+<div class="doc">
+This electronic book is a one-semester course on <i>Software
+    Foundations</i> &mdash; the mathematical theory of programming and
+    programming languages &mdash; suitable for graduate or upper-level
+    undergraduate students.  It develop basic concepts of functional
+    programming, logic, operational semantics, lambda-calculus, and
+    static type systems, using the Coq proof assistant.  
+
+<div class="paragraph"> </div>
+
+    The main novelty of the course is that the development is
+    formalized and machine-checked: the text is literally a script for
+    the Coq proof assistant.  It is intended to be read hand-in-hand
+    with the accompanying Coq source file in an interactive session
+    with Coq.  All the details of the lectures are fully developed in
+    Coq, and the exercises are designed to be worked using Coq.
+
+<div class="paragraph"> </div>
+
+    The files are organized into a sequence of core chapters, covering
+    about one semester's worth of material and organized into a
+    coherent linear narrative, plus several "appendices" covering
+    additional topics. 
+<div class="paragraph"> </div>
+
+<a name="lab1"></a><h1 class="section">Overview</h1>
+
+<div class="paragraph"> </div>
+
+ The course weaves together several fundamental themes:
+
+<div class="paragraph"> </div>
+
+<ul class="doclist">
+<li> <i>Logic</i> as the mathematical basis for software engineering:
+<pre>
+                logic                        calculus
+         --------------------   =   ----------------------------
+         software engineering       mechanical/civil engineering
+</pre>
+         In particular, inductively defined sets and relations and
+         inductive proofs about them are ubiquitous in all of computer
+         science.  The course examines them from many angles.
+
+<div class="paragraph"> </div>
+
+
+</li>
+<li> <i>Functional programming</i>, an increasingly important part of
+    the software developer's bag of tricks:
+
+<div class="paragraph"> </div>
+
+<ul class="doclist">
+<li> Advanced programming idioms in mainstream software
+         development methodologies are increasingly incorporating
+         ideas from functional programming.
+
+<div class="paragraph"> </div>
+
+
+</li>
+<li> In particular, using persistent data structures and avoiding
+         mutable state enormously simplifies many concurrent
+         programming tasks.
+
+<div class="paragraph"> </div>
+
+
+</li>
+</ul>
+
+</li>
+<li> <i>Foundations of programming languages</i> (the second part of the
+    course):
+
+<div class="paragraph"> </div>
+
+<ul class="doclist">
+<li> Notations and techniques for rigorously describing and
+          stress-testing new programming languages and language
+          features.  (This is a surprisingly common activity!  Most
+          large software systems include subsystems that are basically
+          programming languages &mdash; think of regular expressions,
+          command-line formats, preference and configuration files,
+          SQL, Flash, PDF, etc., etc.)
+
+<div class="paragraph"> </div>
+
+
+</li>
+<li> A more sophisticated understanding of the everyday tools
+          used to build software... what's going on under the hood of
+          &lt;your favorite programming language&gt;.
+
+<div class="paragraph"> </div>
+
+
+</li>
+</ul>
+
+</li>
+<li> <i>Coq</i>, an industrial-strength proof assistant:
+
+<div class="paragraph"> </div>
+
+<ul class="doclist">
+<li> Proof assistants are becoming more and more popular in both
+         software and hardware industries.  Coq is not the only one
+         out there, but learning one thoroughly will give you a big
+         advantage in coming to grips with another.
+
+</li>
+</ul>
+
+</li>
+</ul>
+
+<div class="paragraph"> </div>
+
+<a name="lab2"></a><h1 class="section">Practicalities</h1>
+
+<div class="paragraph"> </div>
+
+<a name="lab3"></a><h2 class="section">Chapter Dependencies</h2>
+
+<div class="paragraph"> </div>
+
+ A diagram of the dependencies between chapters and some suggested
+    paths through the material can be found in <span class="inlinecode"><span class="id" type="var">deps.html</span></span>. 
+<div class="paragraph"> </div>
+
+<a name="lab4"></a><h2 class="section">Required Background</h2>
+
+<div class="paragraph"> </div>
+
+ These notes are intended to be accessible to a broad range of
+    readers, from advanced undergraduates to PhD students and
+    researchers.  They assume little specific background in
+    programming languages or logic.  However, a degree of mathematical
+    maturity will be helpful. 
+<div class="paragraph"> </div>
+
+<a name="lab5"></a><h1 class="section">Coq</h1>
+
+<div class="paragraph"> </div>
+
+ Our laboratory for this course is the Coq proof assistant.  
+    Coq can be seen as a combination of two things:
+
+<div class="paragraph"> </div>
+
+<ul class="doclist">
+<li> a simple and slightly idiosyncratic (but, in its way,
+        extremely expressive) <i>programming language</i>, together with
+
+</li>
+<li> a set of tools for stating <i>logical assertions</i> (including
+        assertions about the behavior of programs) and marshalling
+        evidence of their truth.
+
+</li>
+</ul>
+    We will be investigating both aspects in tandem.  
+
+<div class="paragraph"> </div>
+
+<a name="lab6"></a><h2 class="section">System Requirements</h2>
+
+<div class="paragraph"> </div>
+
+ Coq runs on Windows and pretty much all flavors of Unix (including
+    Linux and OS X).  You will need:
+
+<div class="paragraph"> </div>
+
+<ul class="doclist">
+<li> A current installation of Coq, available from the Coq home
+         page.  (Everything is known to compile with 8.3; version 8.2
+         should also work.)
+
+</li>
+<li> An IDE for interacting with Coq.  Currently, there are two choices:
+<ul class="doclist">
+<li> Proof General is an Emacs-based IDE.  It tends to be
+             preferred by users who are already comfortable with
+             Emacs.  It requires a separate installation (google
+             "Proof General").
+
+</li>
+<li> CoqIDE is a simpler stand-alone IDE.  It is distributed
+             with Coq, but on some platforms compiling it involves
+             installing additional packages for GUI libraries and
+             such. 
+</li>
+</ul>
+
+</li>
+</ul>
+
+<div class="paragraph"> </div>
+
+<a name="lab7"></a><h2 class="section">Access to the Coq files</h2>
+
+<div class="paragraph"> </div>
+
+ A tar file containing the full sources for the "release version"
+    of these notes (as a collection of Coq scripts and HTML files) is
+    available here:
+<pre>
+        http://www.cis.upenn.edu/~bcpierce/sf   
+</pre>
+    If you are using the notes as part of a class, you may be given
+    access to a locally extended version of the files, which you
+    should use instead of the release version.
+
+<div class="paragraph"> </div>
+
+<a name="lab8"></a><h1 class="section">Exercises</h1>
+
+<div class="paragraph"> </div>
+
+ Each chapter of the notes includes numerous exercises.  Some are
+    marked "optional", some "recommended."  Doing just the
+    non-optional exercises should provide good coverage of the
+    material in approximately six or eight hours of study time (for
+    the longer chapters).
+
+<div class="paragraph"> </div>
+
+    The "star ratings" for the exercises can be interpreted as follows: 
+
+<div class="paragraph"> </div>
+
+<ul class="doclist">
+<li> One star: easy exercises that most readers should take only a
+         minute or two.  None of these are explicitly marked
+         "Recommended"; rather, <i>all</i> of them should be considered as
+         recommended: readers should be in the habit of working them
+         as they reach them.
+
+<div class="paragraph"> </div>
+
+
+</li>
+<li> Two stars: straightforward exercises (five or ten minutes).
+
+<div class="paragraph"> </div>
+
+
+</li>
+<li> Three stars: exercises requiring a bit of thought (fifteen 
+         minutes to half an hour).
+
+<div class="paragraph"> </div>
+
+
+</li>
+<li> Four stars: more difficult exercises (an hour or two).
+
+</li>
+</ul>
+
+<div class="paragraph"> </div>
+
+<a name="lab9"></a><h1 class="section">Recommended Reading</h1>
+
+<div class="paragraph"> </div>
+
+ Some suggestions for supplemental texts can be found in the
+    <span class="inlinecode"><span class="id" type="var">Postscript</span></span> chapter. 
+<div class="paragraph"> </div>
+
+<a name="lab10"></a><h1 class="section">For Instructors</h1>
+
+<div class="paragraph"> </div>
+
+ If you intend to use these materials in your own course, you will
+    undoubtedly find things you'd like to change, improve, or add.
+    Your contributions are welcome!
+
+<div class="paragraph"> </div>
+
+    Please send an email to Benjamin Pierce, and we'll set you up with
+    read/write access to our subversion repository and developers'
+    mailing list; in the repository you'll find a <span class="inlinecode"><span class="id" type="var">README</span></span> with further
+    instructions. 
+</div>
+<div class="code code-tight">
+
+<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="coqindex.html">Index</a><hr/>This page has been generated by <a href="http://www.lix.polytechnique.fr/coq/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

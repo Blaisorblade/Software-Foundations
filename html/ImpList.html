@@ -1,0 +1,481 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+<link href="coqdoc.css" rel="stylesheet" type="text/css"/>
+<title>ImpList: Imp Extended with Lists</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">ImpList<span class="subtitle">Imp Extended with Lists</span></h1>
+
+<div class="code code-tight">
+</div>
+
+<div class="doc">
+
+</div>
+<div class="code code-tight">
+
+<br/>
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Export</span> <a class="idref" href="SfLib.html#"><span class="id" type="library">SfLib</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab390"></a><h1 class="section">Imp Programs with Lists</h1>
+
+<div class="paragraph"> </div>
+
+ There are only so many numeric functions with interesting
+    properties that have simple proofs.  (Of course, there are lots of
+    interesting functions on numbers and they have many interesting
+    properties &mdash; this is the whole field of number theory! &mdash; but
+    proving these properties often requires developing a lot of
+    supporting lemmas.)  In order to able to write a few more programs
+    to reason about, we introduce here an extended version of Imp
+    where variables can range over both numbers and lists of numbers.
+    The basic operations are extended to also include taking the head
+    and tail of lists, and testing lists for nonemptyness. 
+
+<div class="paragraph"> </div>
+
+    To do this, we only need to change the definitions of <span class="inlinecode"><span class="id" type="var">state</span></span>,
+    <span class="inlinecode"><span class="id" type="var">aexp</span></span>, <span class="inlinecode"><span class="id" type="var">aeval</span></span>, <span class="inlinecode"><span class="id" type="var">bexp</span></span>, and <span class="inlinecode"><span class="id" type="var">beval</span></span>. The definitions of <span class="inlinecode"><span class="id" type="var">com</span></span> and
+    <span class="inlinecode"><span class="id" type="var">ceval</span></span> can be reused verbatim, although we need to copy-and-paste
+    them in the context of the new definitions.
+
+<div class="paragraph"> </div>
+
+    We start by repeating some material from <span class="inlinecode"><span class="id" type="var">Imp.v</span></span>. 
+<div class="paragraph"> </div>
+
+<a name="lab391"></a><h2 class="section">Repeated Definitions</h2>
+
+</div>
+<div class="code code-space">
+
+<br/>
+<span class="id" type="keyword">Inductive</span> <a name="id"><span class="id" type="inductive">id</span></a> : <span class="id" type="keyword">Type</span> := <br/>
+&nbsp;&nbsp;<a name="Id"><span class="id" type="constructor">Id</span></a> : <span class="id" type="inductive">nat</span> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#id"><span class="id" type="inductive">id</span></a>.<br/>
+
+<br/>
+<span class="id" type="keyword">Definition</span> <a name="beq_id"><span class="id" type="definition">beq_id</span></a> <span class="id" type="var">id1</span> <span class="id" type="var">id2</span> :=<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">match</span> (<span class="id" type="var">id1</span>, <span class="id" type="var">id2</span>) <span class="id" type="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="ImpList.html#Id"><span class="id" type="constructor">Id</span></a> <span class="id" type="var">n1</span>, <a class="idref" href="ImpList.html#Id"><span class="id" type="constructor">Id</span></a> <span class="id" type="var">n2</span>) =&gt; <span class="id" type="definition">beq_nat</span> <span class="id" type="var">n1</span> <span class="id" type="var">n2</span><br/>
+&nbsp;&nbsp;<span class="id" type="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Theorem</span> <a name="beq_id_refl"><span class="id" type="lemma">beq_id_refl</span></a> : <span style="font-family: arial;">&forall;</span> <span class="id" type="var">i</span>,<br/>
+&nbsp;&nbsp;<span class="id" type="constructor">true</span> = <a class="idref" href="ImpList.html#beq_id"><span class="id" type="definition">beq_id</span></a> <span class="id" type="var">i</span> <span class="id" type="var">i</span>.<br/>
+<span class="id" type="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">intros</span>. <span class="id" type="tactic">destruct</span> <span class="id" type="var">i</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">apply</span> <span class="id" type="lemma">beq_nat_refl</span>. <span class="id" type="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Theorem</span> <a name="beq_id_eq"><span class="id" type="lemma">beq_id_eq</span></a> : <span style="font-family: arial;">&forall;</span> <span class="id" type="var">i1</span> <span class="id" type="var">i2</span>,<br/>
+&nbsp;&nbsp;<span class="id" type="constructor">true</span> = <a class="idref" href="ImpList.html#beq_id"><span class="id" type="definition">beq_id</span></a> <span class="id" type="var">i1</span> <span class="id" type="var">i2</span> <span style="font-family: arial;">&rarr;</span> <span class="id" type="var">i1</span> = <span class="id" type="var">i2</span>.<br/>
+<span class="id" type="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">intros</span> <span class="id" type="var">i1</span> <span class="id" type="var">i2</span> <span class="id" type="var">H</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">destruct</span> <span class="id" type="var">i1</span>. <span class="id" type="tactic">destruct</span> <span class="id" type="var">i2</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">apply</span> <span class="id" type="definition">beq_nat_eq</span> <span class="id" type="keyword">in</span> <span class="id" type="var">H</span>. <span class="id" type="tactic">subst</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">reflexivity</span>. <span class="id" type="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Theorem</span> <a name="beq_id_false_not_eq"><span class="id" type="lemma">beq_id_false_not_eq</span></a> : <span style="font-family: arial;">&forall;</span> <span class="id" type="var">i1</span> <span class="id" type="var">i2</span>,<br/>
+&nbsp;&nbsp;<a class="idref" href="ImpList.html#beq_id"><span class="id" type="definition">beq_id</span></a> <span class="id" type="var">i1</span> <span class="id" type="var">i2</span> = <span class="id" type="constructor">false</span> <span style="font-family: arial;">&rarr;</span> <span class="id" type="var">i1</span> &lt;&gt; <span class="id" type="var">i2</span>.<br/>
+<span class="id" type="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">intros</span> <span class="id" type="var">i1</span> <span class="id" type="var">i2</span> <span class="id" type="var">H</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">destruct</span> <span class="id" type="var">i1</span>. <span class="id" type="tactic">destruct</span> <span class="id" type="var">i2</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">apply</span> <span class="id" type="lemma">beq_nat_false</span> <span class="id" type="keyword">in</span> <span class="id" type="var">H</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">intros</span> <span class="id" type="var">C</span>. <span class="id" type="tactic">apply</span> <span class="id" type="var">H</span>. <span class="id" type="tactic">inversion</span> <span class="id" type="var">C</span>. <span class="id" type="tactic">reflexivity</span>. <span class="id" type="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Theorem</span> <a name="not_eq_beq_id_false"><span class="id" type="lemma">not_eq_beq_id_false</span></a> : <span style="font-family: arial;">&forall;</span> <span class="id" type="var">i1</span> <span class="id" type="var">i2</span>,<br/>
+&nbsp;&nbsp;<span class="id" type="var">i1</span> &lt;&gt; <span class="id" type="var">i2</span> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#beq_id"><span class="id" type="definition">beq_id</span></a> <span class="id" type="var">i1</span> <span class="id" type="var">i2</span> = <span class="id" type="constructor">false</span>.<br/>
+<span class="id" type="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">intros</span> <span class="id" type="var">i1</span> <span class="id" type="var">i2</span> <span class="id" type="var">H</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">destruct</span> <span class="id" type="var">i1</span>. <span class="id" type="tactic">destruct</span> <span class="id" type="var">i2</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">assert</span> (<span class="id" type="var">n</span> &lt;&gt; <span class="id" type="var">n0</span>).<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="tactic">intros</span> <span class="id" type="var">C</span>. <span class="id" type="tactic">subst</span>. <span class="id" type="tactic">apply</span> <span class="id" type="var">H</span>. <span class="id" type="tactic">reflexivity</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">apply</span> <a class="idref" href="SfLib.html#not_eq_beq_false"><span class="id" type="axiom">not_eq_beq_false</span></a>. <span class="id" type="tactic">assumption</span>. <span class="id" type="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Definition</span> <a name="X"><span class="id" type="definition">X</span></a> : <a class="idref" href="ImpList.html#id"><span class="id" type="inductive">id</span></a> := <a class="idref" href="ImpList.html#Id"><span class="id" type="constructor">Id</span></a> 0.<br/>
+<span class="id" type="keyword">Definition</span> <a name="Y"><span class="id" type="definition">Y</span></a> : <a class="idref" href="ImpList.html#id"><span class="id" type="inductive">id</span></a> := <a class="idref" href="ImpList.html#Id"><span class="id" type="constructor">Id</span></a> 1.<br/>
+<span class="id" type="keyword">Definition</span> <a name="Z"><span class="id" type="definition">Z</span></a> : <a class="idref" href="ImpList.html#id"><span class="id" type="inductive">id</span></a> := <a class="idref" href="ImpList.html#Id"><span class="id" type="constructor">Id</span></a> 2.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab392"></a><h2 class="section">Extensions</h2>
+
+<div class="paragraph"> </div>
+
+ Now we come to the key changes.
+
+<div class="paragraph"> </div>
+
+    Rather than evaluating to a <span class="inlinecode"><span class="id" type="var">nat</span></span>, an <span class="inlinecode"><span class="id" type="var">aexp</span></span> in our new language
+    will evaluate to a <i>value</i> &mdash; an element of type <span class="inlinecode"><span class="id" type="var">val</span></span> &mdash; which
+    can be either a <span class="inlinecode"><span class="id" type="var">nat</span></span> or a list of <span class="inlinecode"><span class="id" type="var">nat</span></span>s.
+
+<div class="paragraph"> </div>
+
+    Similarly, <span class="inlinecode"><span class="id" type="var">state</span></span>s will now map identifiers to <span class="inlinecode"><span class="id" type="var">val</span></span>s rather than
+    <span class="inlinecode"><span class="id" type="var">nat</span></span>s, so that we can store lists in mutable variables. 
+</div>
+<div class="code code-tight">
+
+<br/>
+<span class="id" type="keyword">Inductive</span> <a name="val"><span class="id" type="inductive">val</span></a> : <span class="id" type="keyword">Type</span> :=<br/>
+| <a name="VNat"><span class="id" type="constructor">VNat</span></a> : <span class="id" type="inductive">nat</span> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#val"><span class="id" type="inductive">val</span></a><br/>
+| <a name="VList"><span class="id" type="constructor">VList</span></a> : <span class="id" type="inductive">list</span> <span class="id" type="inductive">nat</span> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#val"><span class="id" type="inductive">val</span></a>.<br/>
+
+<br/>
+<span class="id" type="keyword">Definition</span> <a name="state"><span class="id" type="definition">state</span></a> := <a class="idref" href="ImpList.html#id"><span class="id" type="inductive">id</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#val"><span class="id" type="inductive">val</span></a>.<br/>
+
+<br/>
+<span class="id" type="keyword">Definition</span> <a name="empty_state"><span class="id" type="definition">empty_state</span></a> : <a class="idref" href="ImpList.html#state"><span class="id" type="definition">state</span></a> := <span class="id" type="keyword">fun</span> <span class="id" type="var">_</span> =&gt; <a class="idref" href="ImpList.html#VNat"><span class="id" type="constructor">VNat</span></a> 0.<br/>
+<span class="id" type="keyword">Definition</span> <a name="update"><span class="id" type="definition">update</span></a> (<span class="id" type="var">st</span> : <a class="idref" href="ImpList.html#state"><span class="id" type="definition">state</span></a>) (<span class="id" type="var">V</span>:<a class="idref" href="ImpList.html#id"><span class="id" type="inductive">id</span></a>) (<span class="id" type="var">n</span> : <a class="idref" href="ImpList.html#val"><span class="id" type="inductive">val</span></a>) : <a class="idref" href="ImpList.html#state"><span class="id" type="definition">state</span></a> :=<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">fun</span> <span class="id" type="var">V'</span> =&gt; <span class="id" type="keyword">if</span> <a class="idref" href="ImpList.html#beq_id"><span class="id" type="definition">beq_id</span></a> <span class="id" type="var">V</span> <span class="id" type="var">V'</span> <span class="id" type="keyword">then</span> <span class="id" type="var">n</span> <span class="id" type="keyword">else</span> <span class="id" type="var">st</span> <span class="id" type="var">V'</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Imp does not have a static type system, so nothing prevents the
+    programmer from e.g. adding two lists or taking the head of a
+    number. We have to decide what to do in such nonsensical
+    situations.
+
+<div class="paragraph"> </div>
+
+    We adopt a simple solution: if an arithmetic function is given a
+    list as an argument we treat the list as if it was the number
+    <span class="inlinecode">0</span>. Similarly, if a list function is given a number as an
+    argument we treat the number as if it was <span class="inlinecode"><span class="id" type="var">nil</span></span>.  (Cf. Javascript,
+    where adding <span class="inlinecode">3</span> to the empty list evaluates to <span class="inlinecode">3</span>...)
+
+<div class="paragraph"> </div>
+
+    The two functions <span class="inlinecode"><span class="id" type="var">asnat</span></span> and <span class="inlinecode"><span class="id" type="var">aslist</span></span> interpret <span class="inlinecode"><span class="id" type="var">val</span></span>s in a
+    numeric or a list context; <span class="inlinecode"><span class="id" type="var">aeval</span></span> calls these whenever it
+    evaluates an arithmetic or a list operation.
+</div>
+<div class="code code-tight">
+
+<br/>
+<span class="id" type="keyword">Definition</span> <a name="asnat"><span class="id" type="definition">asnat</span></a> (<span class="id" type="var">v</span> : <a class="idref" href="ImpList.html#val"><span class="id" type="inductive">val</span></a>) : <span class="id" type="inductive">nat</span> :=<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">match</span> <span class="id" type="var">v</span> <span class="id" type="keyword">with</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="ImpList.html#VNat"><span class="id" type="constructor">VNat</span></a> <span class="id" type="var">n</span> =&gt; <span class="id" type="var">n</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="ImpList.html#VList"><span class="id" type="constructor">VList</span></a> <span class="id" type="var">_</span> =&gt; 0<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Definition</span> <a name="aslist"><span class="id" type="definition">aslist</span></a> (<span class="id" type="var">v</span> : <a class="idref" href="ImpList.html#val"><span class="id" type="inductive">val</span></a>) : <span class="id" type="inductive">list</span> <span class="id" type="inductive">nat</span> :=<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">match</span> <span class="id" type="var">v</span> <span class="id" type="keyword">with</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="ImpList.html#VNat"><span class="id" type="constructor">VNat</span></a> <span class="id" type="var">n</span> =&gt; []<br/>
+&nbsp;&nbsp;| <a class="idref" href="ImpList.html#VList"><span class="id" type="constructor">VList</span></a> <span class="id" type="var">xs</span> =&gt; <span class="id" type="var">xs</span><br/>
+&nbsp;&nbsp;<span class="id" type="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Now we fill in the definitions of abstract syntax and
+    evaluation functions for arithmetic and boolean expressions. 
+</div>
+<div class="code code-tight">
+
+<br/>
+<span class="id" type="keyword">Inductive</span> <a name="aexp"><span class="id" type="inductive">aexp</span></a> : <span class="id" type="keyword">Type</span> := <br/>
+&nbsp;&nbsp;| <a name="ANum"><span class="id" type="constructor">ANum</span></a> : <span class="id" type="inductive">nat</span> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a><br/>
+&nbsp;&nbsp;| <a name="AId"><span class="id" type="constructor">AId</span></a> : <a class="idref" href="ImpList.html#id"><span class="id" type="inductive">id</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a><br/>
+&nbsp;&nbsp;| <a name="APlus"><span class="id" type="constructor">APlus</span></a> : <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a><br/>
+&nbsp;&nbsp;| <a name="AMinus"><span class="id" type="constructor">AMinus</span></a> : <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a><br/>
+&nbsp;&nbsp;| <a name="AMult"><span class="id" type="constructor">AMult</span></a> : <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a><br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;Four&nbsp;new&nbsp;cases:&nbsp;*)</span><br/>
+&nbsp;&nbsp;| <a name="AHead"><span class="id" type="constructor">AHead</span></a> : <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a><br/>
+&nbsp;&nbsp;| <a name="ATail"><span class="id" type="constructor">ATail</span></a> : <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a><br/>
+&nbsp;&nbsp;| <a name="ACons"><span class="id" type="constructor">ACons</span></a> : <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a><br/>
+&nbsp;&nbsp;| <a name="ANil"><span class="id" type="constructor">ANil</span></a>  : <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a>.<br/>
+
+<br/>
+<span class="id" type="keyword">Tactic Notation</span> "aexp_cases" <span class="id" type="var">tactic</span>(<span class="id" type="var">first</span>) <span class="id" type="var">ident</span>(<span class="id" type="var">c</span>) :=<br/>
+&nbsp;&nbsp;<span class="id" type="var">first</span>;<br/>
+&nbsp;&nbsp;[ <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "ANum" | <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "AId" | <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "APlus"<br/>
+&nbsp;&nbsp;| <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "AMinus" | <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "AMult"<br/>
+&nbsp;&nbsp;| <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "AHead" | <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "ATail"<br/>
+&nbsp;&nbsp;| <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "ACons" | <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "ANil" ].<br/>
+
+<br/>
+<span class="id" type="keyword">Definition</span> <a name="tail"><span class="id" type="definition">tail</span></a> (<span class="id" type="var">l</span> : <span class="id" type="inductive">list</span> <span class="id" type="inductive">nat</span>) :=<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">match</span> <span class="id" type="var">l</span> <span class="id" type="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" type="var">x</span>::<span class="id" type="var">xs</span> =&gt; <span class="id" type="var">xs</span><br/>
+&nbsp;&nbsp;| [] =&gt; []<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Definition</span> <a name="head"><span class="id" type="definition">head</span></a> (<span class="id" type="var">l</span> : <span class="id" type="inductive">list</span> <span class="id" type="inductive">nat</span>) :=<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">match</span> <span class="id" type="var">l</span> <span class="id" type="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" type="var">x</span>::<span class="id" type="var">xs</span> =&gt; <span class="id" type="var">x</span><br/>
+&nbsp;&nbsp;| [] =&gt; 0<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Fixpoint</span> <a name="aeval"><span class="id" type="definition">aeval</span></a> (<span class="id" type="var">st</span> : <a class="idref" href="ImpList.html#state"><span class="id" type="definition">state</span></a>) (<span class="id" type="var">e</span> : <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a>) : <a class="idref" href="ImpList.html#val"><span class="id" type="inductive">val</span></a> :=<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">match</span> <span class="id" type="var">e</span> <span class="id" type="keyword">with</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="ImpList.html#ANum"><span class="id" type="constructor">ANum</span></a> <span class="id" type="var">n</span> =&gt; <a class="idref" href="ImpList.html#VNat"><span class="id" type="constructor">VNat</span></a> <span class="id" type="var">n</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="ImpList.html#AId"><span class="id" type="constructor">AId</span></a> <span class="id" type="var">i</span> =&gt; <span class="id" type="var">st</span> <span class="id" type="var">i</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="ImpList.html#APlus"><span class="id" type="constructor">APlus</span></a> <span class="id" type="var">a1</span> <span class="id" type="var">a2</span>   =&gt; <a class="idref" href="ImpList.html#VNat"><span class="id" type="constructor">VNat</span></a> (<a class="idref" href="ImpList.html#asnat"><span class="id" type="definition">asnat</span></a> (<a class="idref" href="ImpList.html#aeval"><span class="id" type="definition">aeval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">a1</span>) + <a class="idref" href="ImpList.html#asnat"><span class="id" type="definition">asnat</span></a> (<a class="idref" href="ImpList.html#aeval"><span class="id" type="definition">aeval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">a2</span>))<br/>
+&nbsp;&nbsp;| <a class="idref" href="ImpList.html#AMinus"><span class="id" type="constructor">AMinus</span></a> <span class="id" type="var">a1</span> <span class="id" type="var">a2</span>  =&gt; <a class="idref" href="ImpList.html#VNat"><span class="id" type="constructor">VNat</span></a> (<a class="idref" href="ImpList.html#asnat"><span class="id" type="definition">asnat</span></a> (<a class="idref" href="ImpList.html#aeval"><span class="id" type="definition">aeval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">a1</span>) - <a class="idref" href="ImpList.html#asnat"><span class="id" type="definition">asnat</span></a> (<a class="idref" href="ImpList.html#aeval"><span class="id" type="definition">aeval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">a2</span>))<br/>
+&nbsp;&nbsp;| <a class="idref" href="ImpList.html#AMult"><span class="id" type="constructor">AMult</span></a> <span class="id" type="var">a1</span> <span class="id" type="var">a2</span>   =&gt; <a class="idref" href="ImpList.html#VNat"><span class="id" type="constructor">VNat</span></a> (<a class="idref" href="ImpList.html#asnat"><span class="id" type="definition">asnat</span></a> (<a class="idref" href="ImpList.html#aeval"><span class="id" type="definition">aeval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">a1</span>) * <a class="idref" href="ImpList.html#asnat"><span class="id" type="definition">asnat</span></a> (<a class="idref" href="ImpList.html#aeval"><span class="id" type="definition">aeval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">a2</span>))<br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;Four&nbsp;new&nbsp;cases:&nbsp;*)</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="ImpList.html#ATail"><span class="id" type="constructor">ATail</span></a> <span class="id" type="var">a</span> =&gt; <a class="idref" href="ImpList.html#VList"><span class="id" type="constructor">VList</span></a> (<a class="idref" href="ImpList.html#tail"><span class="id" type="definition">tail</span></a> (<a class="idref" href="ImpList.html#aslist"><span class="id" type="definition">aslist</span></a> (<a class="idref" href="ImpList.html#aeval"><span class="id" type="definition">aeval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">a</span>)))<br/>
+&nbsp;&nbsp;| <a class="idref" href="ImpList.html#AHead"><span class="id" type="constructor">AHead</span></a> <span class="id" type="var">a</span> =&gt; <a class="idref" href="ImpList.html#VNat"><span class="id" type="constructor">VNat</span></a> (<a class="idref" href="ImpList.html#head"><span class="id" type="definition">head</span></a> (<a class="idref" href="ImpList.html#aslist"><span class="id" type="definition">aslist</span></a> (<a class="idref" href="ImpList.html#aeval"><span class="id" type="definition">aeval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">a</span>)))<br/>
+&nbsp;&nbsp;| <a class="idref" href="ImpList.html#ACons"><span class="id" type="constructor">ACons</span></a> <span class="id" type="var">a1</span> <span class="id" type="var">a2</span> =&gt; <a class="idref" href="ImpList.html#VList"><span class="id" type="constructor">VList</span></a> (<a class="idref" href="ImpList.html#asnat"><span class="id" type="definition">asnat</span></a> (<a class="idref" href="ImpList.html#aeval"><span class="id" type="definition">aeval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">a1</span>) :: <a class="idref" href="ImpList.html#aslist"><span class="id" type="definition">aslist</span></a> (<a class="idref" href="ImpList.html#aeval"><span class="id" type="definition">aeval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">a2</span>))<br/>
+&nbsp;&nbsp;| <a class="idref" href="ImpList.html#ANil"><span class="id" type="constructor">ANil</span></a> =&gt; <a class="idref" href="ImpList.html#VList"><span class="id" type="constructor">VList</span></a> []<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+We extend <span class="inlinecode"><span class="id" type="var">bexp</span></span>s with an operation to test if a list is nonempty
+    and adapt <span class="inlinecode"><span class="id" type="var">beval</span></span> acordingly. 
+</div>
+<div class="code code-tight">
+
+<br/>
+<span class="id" type="keyword">Inductive</span> <a name="bexp"><span class="id" type="inductive">bexp</span></a> : <span class="id" type="keyword">Type</span> := <br/>
+&nbsp;&nbsp;| <a name="BTrue"><span class="id" type="constructor">BTrue</span></a> : <a class="idref" href="ImpList.html#bexp"><span class="id" type="inductive">bexp</span></a><br/>
+&nbsp;&nbsp;| <a name="BFalse"><span class="id" type="constructor">BFalse</span></a> : <a class="idref" href="ImpList.html#bexp"><span class="id" type="inductive">bexp</span></a><br/>
+&nbsp;&nbsp;| <a name="BEq"><span class="id" type="constructor">BEq</span></a> : <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#bexp"><span class="id" type="inductive">bexp</span></a><br/>
+&nbsp;&nbsp;| <a name="BLe"><span class="id" type="constructor">BLe</span></a> : <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#bexp"><span class="id" type="inductive">bexp</span></a><br/>
+&nbsp;&nbsp;| <a name="BNot"><span class="id" type="constructor">BNot</span></a> : <a class="idref" href="ImpList.html#bexp"><span class="id" type="inductive">bexp</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#bexp"><span class="id" type="inductive">bexp</span></a><br/>
+&nbsp;&nbsp;| <a name="BAnd"><span class="id" type="constructor">BAnd</span></a> : <a class="idref" href="ImpList.html#bexp"><span class="id" type="inductive">bexp</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#bexp"><span class="id" type="inductive">bexp</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#bexp"><span class="id" type="inductive">bexp</span></a><br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;New&nbsp;case:&nbsp;*)</span><br/>
+&nbsp;&nbsp;| <a name="BIsCons"><span class="id" type="constructor">BIsCons</span></a> : <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#bexp"><span class="id" type="inductive">bexp</span></a>.<br/>
+
+<br/>
+<span class="id" type="keyword">Tactic Notation</span> "bexp_cases" <span class="id" type="var">tactic</span>(<span class="id" type="var">first</span>) <span class="id" type="var">ident</span>(<span class="id" type="var">c</span>) :=<br/>
+&nbsp;&nbsp;<span class="id" type="var">first</span>;<br/>
+&nbsp;&nbsp;[ <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "BTrue" | <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "BFalse" | <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "BEq"<br/>
+&nbsp;&nbsp;| <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "BLe" | <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "BNot" | <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "BAnd"<br/>
+&nbsp;&nbsp;| <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "BIsCons" ].<br/>
+
+<br/>
+<span class="id" type="keyword">Fixpoint</span> <a name="beval"><span class="id" type="definition">beval</span></a> (<span class="id" type="var">st</span> : <a class="idref" href="ImpList.html#state"><span class="id" type="definition">state</span></a>) (<span class="id" type="var">e</span> : <a class="idref" href="ImpList.html#bexp"><span class="id" type="inductive">bexp</span></a>) : <span class="id" type="inductive">bool</span> :=<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">match</span> <span class="id" type="var">e</span> <span class="id" type="keyword">with</span> <br/>
+&nbsp;&nbsp;| <a class="idref" href="ImpList.html#BTrue"><span class="id" type="constructor">BTrue</span></a>       =&gt; <span class="id" type="constructor">true</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="ImpList.html#BFalse"><span class="id" type="constructor">BFalse</span></a>      =&gt; <span class="id" type="constructor">false</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="ImpList.html#BEq"><span class="id" type="constructor">BEq</span></a> <span class="id" type="var">a1</span> <span class="id" type="var">a2</span>   =&gt; <span class="id" type="definition">beq_nat</span> (<a class="idref" href="ImpList.html#asnat"><span class="id" type="definition">asnat</span></a> (<a class="idref" href="ImpList.html#aeval"><span class="id" type="definition">aeval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">a1</span>)) (<a class="idref" href="ImpList.html#asnat"><span class="id" type="definition">asnat</span></a> (<a class="idref" href="ImpList.html#aeval"><span class="id" type="definition">aeval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">a2</span>))<br/>
+&nbsp;&nbsp;| <a class="idref" href="ImpList.html#BLe"><span class="id" type="constructor">BLe</span></a> <span class="id" type="var">a1</span> <span class="id" type="var">a2</span>   =&gt; <a class="idref" href="SfLib.html#ble_nat"><span class="id" type="definition">ble_nat</span></a> (<a class="idref" href="ImpList.html#asnat"><span class="id" type="definition">asnat</span></a> (<a class="idref" href="ImpList.html#aeval"><span class="id" type="definition">aeval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">a1</span>)) (<a class="idref" href="ImpList.html#asnat"><span class="id" type="definition">asnat</span></a> (<a class="idref" href="ImpList.html#aeval"><span class="id" type="definition">aeval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">a2</span>))<br/>
+&nbsp;&nbsp;| <a class="idref" href="ImpList.html#BNot"><span class="id" type="constructor">BNot</span></a> <span class="id" type="var">b1</span>     =&gt; <span class="id" type="definition">negb</span> (<a class="idref" href="ImpList.html#beval"><span class="id" type="definition">beval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">b1</span>)<br/>
+&nbsp;&nbsp;| <a class="idref" href="ImpList.html#BAnd"><span class="id" type="constructor">BAnd</span></a> <span class="id" type="var">b1</span> <span class="id" type="var">b2</span>  =&gt; <span class="id" type="definition">andb</span> (<a class="idref" href="ImpList.html#beval"><span class="id" type="definition">beval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">b1</span>) (<a class="idref" href="ImpList.html#beval"><span class="id" type="definition">beval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">b2</span>)<br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;New&nbsp;case:&nbsp;*)</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="ImpList.html#BIsCons"><span class="id" type="constructor">BIsCons</span></a> <span class="id" type="var">a</span>    =&gt; <span class="id" type="keyword">match</span> <a class="idref" href="ImpList.html#aslist"><span class="id" type="definition">aslist</span></a> (<a class="idref" href="ImpList.html#aeval"><span class="id" type="definition">aeval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">a</span>) <span class="id" type="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" type="var">_</span>::_ =&gt; <span class="id" type="constructor">true</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| [] =&gt; <span class="id" type="constructor">false</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="keyword">end</span><br/>
+&nbsp;&nbsp;<span class="id" type="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab393"></a><h2 class="section">Repeated Definitions</h2>
+
+<div class="paragraph"> </div>
+
+ Now we need to repeat a little bit of low-level work from Imp.v,
+    plus the definitions of <span class="inlinecode"><span class="id" type="var">com</span></span> and <span class="inlinecode"><span class="id" type="var">ceval</span></span>.  There are no
+    interesting changes &mdash; it's just a matter of repeating the same
+    definitions, lemmas, and proofs in the context of the new
+    definitions of arithmetic and boolean expressions.  
+
+<div class="paragraph"> </div>
+
+    (Is all this cutting and pasting really necessary?  No: Coq
+    includes a powerful module system that we could use to abstract
+    the repeated definitions with respect to the varying parts.  But
+    explaining how it works would distract us from the topic at hand.)
+ 
+</div>
+<div class="code code-tight">
+
+<br/>
+<span class="id" type="keyword">Theorem</span> <a name="update_eq"><span class="id" type="lemma">update_eq</span></a> : <span style="font-family: arial;">&forall;</span> <span class="id" type="var">n</span> <span class="id" type="var">V</span> <span class="id" type="var">st</span>,<br/>
+&nbsp;&nbsp;(<a class="idref" href="ImpList.html#update"><span class="id" type="definition">update</span></a> <span class="id" type="var">st</span> <span class="id" type="var">V</span> <span class="id" type="var">n</span>) <span class="id" type="var">V</span> = <span class="id" type="var">n</span>.<br/>
+<span class="id" type="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">intros</span> <span class="id" type="var">n</span> <span class="id" type="var">V</span> <span class="id" type="var">st</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">unfold</span> <span class="id" type="var">update</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">rewrite</span> <span style="font-family: arial;">&larr;</span> <a class="idref" href="ImpList.html#beq_id_refl"><span class="id" type="lemma">beq_id_refl</span></a>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">reflexivity</span>.<br/>
+<span class="id" type="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Theorem</span> <a name="update_neq"><span class="id" type="lemma">update_neq</span></a> : <span style="font-family: arial;">&forall;</span> <span class="id" type="var">V2</span> <span class="id" type="var">V1</span> <span class="id" type="var">n</span> <span class="id" type="var">st</span>,<br/>
+&nbsp;&nbsp;<a class="idref" href="ImpList.html#beq_id"><span class="id" type="definition">beq_id</span></a> <span class="id" type="var">V2</span> <span class="id" type="var">V1</span> = <span class="id" type="constructor">false</span> <span style="font-family: arial;">&rarr;</span><br/>
+&nbsp;&nbsp;(<a class="idref" href="ImpList.html#update"><span class="id" type="definition">update</span></a> <span class="id" type="var">st</span> <span class="id" type="var">V2</span> <span class="id" type="var">n</span>) <span class="id" type="var">V1</span> = (<span class="id" type="var">st</span> <span class="id" type="var">V1</span>).<br/>
+<span class="id" type="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">intros</span> <span class="id" type="var">V2</span> <span class="id" type="var">V1</span> <span class="id" type="var">n</span> <span class="id" type="var">st</span> <span class="id" type="var">Hneq</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">unfold</span> <span class="id" type="var">update</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">rewrite</span> <span style="font-family: arial;">&rarr;</span> <span class="id" type="var">Hneq</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">reflexivity</span>. <span class="id" type="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Theorem</span> <a name="update_shadow"><span class="id" type="lemma">update_shadow</span></a> : <span style="font-family: arial;">&forall;</span> <span class="id" type="var">x1</span> <span class="id" type="var">x2</span> <span class="id" type="var">k1</span> <span class="id" type="var">k2</span> (<span class="id" type="var">f</span> : <a class="idref" href="ImpList.html#state"><span class="id" type="definition">state</span></a>),<br/>
+&nbsp;&nbsp;&nbsp;(<a class="idref" href="ImpList.html#update"><span class="id" type="definition">update</span></a>  (<a class="idref" href="ImpList.html#update"><span class="id" type="definition">update</span></a> <span class="id" type="var">f</span> <span class="id" type="var">k2</span> <span class="id" type="var">x1</span>) <span class="id" type="var">k2</span> <span class="id" type="var">x2</span>) <span class="id" type="var">k1</span> = (<a class="idref" href="ImpList.html#update"><span class="id" type="definition">update</span></a> <span class="id" type="var">f</span> <span class="id" type="var">k2</span> <span class="id" type="var">x2</span>) <span class="id" type="var">k1</span>.<br/>
+<span class="id" type="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">intros</span> <span class="id" type="var">x1</span> <span class="id" type="var">x2</span> <span class="id" type="var">k1</span> <span class="id" type="var">k2</span> <span class="id" type="var">f</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">unfold</span> <span class="id" type="var">update</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">destruct</span> (<a class="idref" href="ImpList.html#beq_id"><span class="id" type="definition">beq_id</span></a> <span class="id" type="var">k2</span> <span class="id" type="var">k1</span>); <span class="id" type="tactic">reflexivity</span>. <span class="id" type="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Theorem</span> <a name="update_same"><span class="id" type="lemma">update_same</span></a> : <span style="font-family: arial;">&forall;</span> <span class="id" type="var">x1</span> <span class="id" type="var">k1</span> <span class="id" type="var">k2</span> (<span class="id" type="var">f</span> : <a class="idref" href="ImpList.html#state"><span class="id" type="definition">state</span></a>),<br/>
+&nbsp;&nbsp;<span class="id" type="var">f</span> <span class="id" type="var">k1</span> = <span class="id" type="var">x1</span> <span style="font-family: arial;">&rarr;</span><br/>
+&nbsp;&nbsp;(<a class="idref" href="ImpList.html#update"><span class="id" type="definition">update</span></a> <span class="id" type="var">f</span> <span class="id" type="var">k1</span> <span class="id" type="var">x1</span>) <span class="id" type="var">k2</span> = <span class="id" type="var">f</span> <span class="id" type="var">k2</span>.<br/>
+<span class="id" type="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">intros</span> <span class="id" type="var">x1</span> <span class="id" type="var">k1</span> <span class="id" type="var">k2</span> <span class="id" type="var">f</span> <span class="id" type="var">Heq</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">unfold</span> <span class="id" type="var">update</span>. <span class="id" type="tactic">subst</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="var">remember</span> (<a class="idref" href="ImpList.html#beq_id"><span class="id" type="definition">beq_id</span></a> <span class="id" type="var">k1</span> <span class="id" type="var">k2</span>) <span class="id" type="keyword">as</span> <span class="id" type="var">b</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">destruct</span> <span class="id" type="var">b</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="var">Case</span> "true".<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="tactic">apply</span> <a class="idref" href="ImpList.html#beq_id_eq"><span class="id" type="lemma">beq_id_eq</span></a> <span class="id" type="keyword">in</span> <span class="id" type="var">Heqb</span>. <span class="id" type="tactic">subst</span>. <span class="id" type="tactic">reflexivity</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="var">Case</span> "false".<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="tactic">reflexivity</span>. <span class="id" type="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Theorem</span> <a name="update_permute"><span class="id" type="lemma">update_permute</span></a> : <span style="font-family: arial;">&forall;</span> <span class="id" type="var">x1</span> <span class="id" type="var">x2</span> <span class="id" type="var">k1</span> <span class="id" type="var">k2</span> <span class="id" type="var">k3</span> <span class="id" type="var">f</span>,<br/>
+&nbsp;&nbsp;<a class="idref" href="ImpList.html#beq_id"><span class="id" type="definition">beq_id</span></a> <span class="id" type="var">k2</span> <span class="id" type="var">k1</span> = <span class="id" type="constructor">false</span> <span style="font-family: arial;">&rarr;</span> <br/>
+&nbsp;&nbsp;(<a class="idref" href="ImpList.html#update"><span class="id" type="definition">update</span></a> (<a class="idref" href="ImpList.html#update"><span class="id" type="definition">update</span></a> <span class="id" type="var">f</span> <span class="id" type="var">k2</span> <span class="id" type="var">x1</span>) <span class="id" type="var">k1</span> <span class="id" type="var">x2</span>) <span class="id" type="var">k3</span> = (<a class="idref" href="ImpList.html#update"><span class="id" type="definition">update</span></a> (<a class="idref" href="ImpList.html#update"><span class="id" type="definition">update</span></a> <span class="id" type="var">f</span> <span class="id" type="var">k1</span> <span class="id" type="var">x2</span>) <span class="id" type="var">k2</span> <span class="id" type="var">x1</span>) <span class="id" type="var">k3</span>.<br/>
+<span class="id" type="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">intros</span> <span class="id" type="var">x1</span> <span class="id" type="var">x2</span> <span class="id" type="var">k1</span> <span class="id" type="var">k2</span> <span class="id" type="var">k3</span> <span class="id" type="var">f</span> <span class="id" type="var">H</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">unfold</span> <span class="id" type="var">update</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="var">remember</span> (<a class="idref" href="ImpList.html#beq_id"><span class="id" type="definition">beq_id</span></a> <span class="id" type="var">k1</span> <span class="id" type="var">k3</span>) <span class="id" type="keyword">as</span> <span class="id" type="var">b13</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="var">remember</span> (<a class="idref" href="ImpList.html#beq_id"><span class="id" type="definition">beq_id</span></a> <span class="id" type="var">k2</span> <span class="id" type="var">k3</span>) <span class="id" type="keyword">as</span> <span class="id" type="var">b23</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">apply</span> <a class="idref" href="ImpList.html#beq_id_false_not_eq"><span class="id" type="lemma">beq_id_false_not_eq</span></a> <span class="id" type="keyword">in</span> <span class="id" type="var">H</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">destruct</span> <span class="id" type="var">b13</span>; <span class="id" type="tactic">try</span> <span class="id" type="tactic">reflexivity</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="var">Case</span> "true".<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="tactic">destruct</span> <span class="id" type="var">b23</span>; <span class="id" type="tactic">try</span> <span class="id" type="tactic">reflexivity</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="var">SCase</span> "true".<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="tactic">apply</span> <a class="idref" href="ImpList.html#beq_id_eq"><span class="id" type="lemma">beq_id_eq</span></a> <span class="id" type="keyword">in</span> <span class="id" type="var">Heqb13</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="tactic">apply</span> <a class="idref" href="ImpList.html#beq_id_eq"><span class="id" type="lemma">beq_id_eq</span></a> <span class="id" type="keyword">in</span> <span class="id" type="var">Heqb23</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="tactic">subst</span>. <span class="id" type="tactic">apply</span> <a class="idref" href="SfLib.html#ex_falso_quodlibet"><span class="id" type="lemma">ex_falso_quodlibet</span></a>. <span class="id" type="tactic">apply</span> <span class="id" type="var">H</span>. <span class="id" type="tactic">reflexivity</span>. <span class="id" type="keyword">Qed</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+We can keep exactly the same old definitions of <span class="inlinecode"><span class="id" type="var">com</span></span> and
+    <span class="inlinecode"><span class="id" type="var">ceval</span></span>. 
+</div>
+<div class="code code-tight">
+
+<br/>
+<span class="id" type="keyword">Inductive</span> <a name="com"><span class="id" type="inductive">com</span></a> : <span class="id" type="keyword">Type</span> :=<br/>
+&nbsp;&nbsp;| <a name="CSkip"><span class="id" type="constructor">CSkip</span></a> : <a class="idref" href="ImpList.html#com"><span class="id" type="inductive">com</span></a><br/>
+&nbsp;&nbsp;| <a name="CAss"><span class="id" type="constructor">CAss</span></a> : <a class="idref" href="ImpList.html#id"><span class="id" type="inductive">id</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#aexp"><span class="id" type="inductive">aexp</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#com"><span class="id" type="inductive">com</span></a><br/>
+&nbsp;&nbsp;| <a name="CSeq"><span class="id" type="constructor">CSeq</span></a> : <a class="idref" href="ImpList.html#com"><span class="id" type="inductive">com</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#com"><span class="id" type="inductive">com</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#com"><span class="id" type="inductive">com</span></a><br/>
+&nbsp;&nbsp;| <a name="CIf"><span class="id" type="constructor">CIf</span></a> : <a class="idref" href="ImpList.html#bexp"><span class="id" type="inductive">bexp</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#com"><span class="id" type="inductive">com</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#com"><span class="id" type="inductive">com</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#com"><span class="id" type="inductive">com</span></a><br/>
+&nbsp;&nbsp;| <a name="CWhile"><span class="id" type="constructor">CWhile</span></a> : <a class="idref" href="ImpList.html#bexp"><span class="id" type="inductive">bexp</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#com"><span class="id" type="inductive">com</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#com"><span class="id" type="inductive">com</span></a>.<br/>
+
+<br/>
+<span class="id" type="keyword">Tactic Notation</span> "com_cases" <span class="id" type="var">tactic</span>(<span class="id" type="var">first</span>) <span class="id" type="var">ident</span>(<span class="id" type="var">c</span>) :=<br/>
+&nbsp;&nbsp;<span class="id" type="var">first</span>;<br/>
+&nbsp;&nbsp;[ <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "SKIP" | <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "::=" | <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> ";"<br/>
+&nbsp;&nbsp;| <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "IFB" | <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "WHILE" ].<br/>
+
+<br/>
+<span class="id" type="keyword">Notation</span> "'SKIP'" := <br/>
+&nbsp;&nbsp;<a class="idref" href="ImpList.html#CSkip"><span class="id" type="constructor">CSkip</span></a>.<br/>
+<span class="id" type="keyword">Notation</span> "l '::=' a" := <br/>
+&nbsp;&nbsp;(<a class="idref" href="ImpList.html#CAss"><span class="id" type="constructor">CAss</span></a> <span class="id" type="var">l</span> <span class="id" type="var">a</span>) (<span class="id" type="tactic">at</span> <span class="id" type="var">level</span> 60).<br/>
+<span class="id" type="keyword">Notation</span> "c1 ; c2" := <br/>
+&nbsp;&nbsp;(<a class="idref" href="ImpList.html#CSeq"><span class="id" type="constructor">CSeq</span></a> <span class="id" type="var">c1</span> <span class="id" type="var">c2</span>) (<span class="id" type="tactic">at</span> <span class="id" type="var">level</span> 80, <span class="id" type="var">right</span> <span class="id" type="var">associativity</span>).<br/>
+<span class="id" type="keyword">Notation</span> "'WHILE' b 'DO' c 'END'" := <br/>
+&nbsp;&nbsp;(<a class="idref" href="ImpList.html#CWhile"><span class="id" type="constructor">CWhile</span></a> <span class="id" type="var">b</span> <span class="id" type="var">c</span>) (<span class="id" type="tactic">at</span> <span class="id" type="var">level</span> 80, <span class="id" type="var">right</span> <span class="id" type="var">associativity</span>).<br/>
+<span class="id" type="keyword">Notation</span> "'IFB' e1 'THEN' e2 'ELSE' e3 'FI'" := <br/>
+&nbsp;&nbsp;(<a class="idref" href="ImpList.html#CIf"><span class="id" type="constructor">CIf</span></a> <span class="id" type="var">e1</span> <span class="id" type="var">e2</span> <span class="id" type="var">e3</span>) (<span class="id" type="tactic">at</span> <span class="id" type="var">level</span> 80, <span class="id" type="var">right</span> <span class="id" type="var">associativity</span>).<br/>
+
+<br/>
+<span class="id" type="keyword">Reserved Notation</span> "c1 '/' st '<span style="font-family: arial;">&dArr;</span>' st'" (<span class="id" type="tactic">at</span> <span class="id" type="var">level</span> 40, <span class="id" type="var">st</span> <span class="id" type="tactic">at</span> <span class="id" type="var">level</span> 39).<br/>
+
+<br/>
+<span class="id" type="keyword">Inductive</span> <a name="ceval"><span class="id" type="inductive">ceval</span></a> : <a class="idref" href="ImpList.html#state"><span class="id" type="definition">state</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#com"><span class="id" type="inductive">com</span></a> <span style="font-family: arial;">&rarr;</span> <a class="idref" href="ImpList.html#state"><span class="id" type="definition">state</span></a> <span style="font-family: arial;">&rarr;</span> <span class="id" type="keyword">Prop</span> :=<br/>
+&nbsp;&nbsp;| <a name="E_Skip"><span class="id" type="constructor">E_Skip</span></a> : <span style="font-family: arial;">&forall;</span> <span class="id" type="var">st</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="var">SKIP</span> / <span class="id" type="var">st</span> <span style="font-family: arial;">&dArr;</span> <span class="id" type="var">st</span><br/>
+&nbsp;&nbsp;| <a name="E_Asgn"><span class="id" type="constructor">E_Asgn</span></a>  : <span style="font-family: arial;">&forall;</span> <span class="id" type="var">st</span> <span class="id" type="var">a1</span> <span class="id" type="var">n</span> <span class="id" type="var">l</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="ImpList.html#aeval"><span class="id" type="definition">aeval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">a1</span> = <span class="id" type="var">n</span> <span style="font-family: arial;">&rarr;</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" type="var">l</span> ::= <span class="id" type="var">a1</span>) / <span class="id" type="var">st</span> <span style="font-family: arial;">&dArr;</span> (<a class="idref" href="ImpList.html#update"><span class="id" type="definition">update</span></a> <span class="id" type="var">st</span> <span class="id" type="var">l</span> <span class="id" type="var">n</span>)<br/>
+&nbsp;&nbsp;| <a name="E_Seq"><span class="id" type="constructor">E_Seq</span></a> : <span style="font-family: arial;">&forall;</span> <span class="id" type="var">c1</span> <span class="id" type="var">c2</span> <span class="id" type="var">st</span> <span class="id" type="var">st'</span> <span class="id" type="var">st''</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="var">c1</span> / <span class="id" type="var">st</span>  <span style="font-family: arial;">&dArr;</span> <span class="id" type="var">st'</span> <span style="font-family: arial;">&rarr;</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="var">c2</span> / <span class="id" type="var">st'</span> <span style="font-family: arial;">&dArr;</span> <span class="id" type="var">st''</span> <span style="font-family: arial;">&rarr;</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" type="var">c1</span> ; <span class="id" type="var">c2</span>) / <span class="id" type="var">st</span> <span style="font-family: arial;">&dArr;</span> <span class="id" type="var">st''</span><br/>
+&nbsp;&nbsp;| <a name="E_IfTrue"><span class="id" type="constructor">E_IfTrue</span></a> : <span style="font-family: arial;">&forall;</span> <span class="id" type="var">st</span> <span class="id" type="var">st'</span> <span class="id" type="var">b1</span> <span class="id" type="var">c1</span> <span class="id" type="var">c2</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="ImpList.html#beval"><span class="id" type="definition">beval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">b1</span> = <span class="id" type="constructor">true</span> <span style="font-family: arial;">&rarr;</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="var">c1</span> / <span class="id" type="var">st</span> <span style="font-family: arial;">&dArr;</span> <span class="id" type="var">st'</span> <span style="font-family: arial;">&rarr;</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" type="var">IFB</span> <span class="id" type="var">b1</span> <span class="id" type="var">THEN</span> <span class="id" type="var">c1</span> <span class="id" type="var">ELSE</span> <span class="id" type="var">c2</span> <span class="id" type="var">FI</span>) / <span class="id" type="var">st</span> <span style="font-family: arial;">&dArr;</span> <span class="id" type="var">st'</span><br/>
+&nbsp;&nbsp;| <a name="E_IfFalse"><span class="id" type="constructor">E_IfFalse</span></a> : <span style="font-family: arial;">&forall;</span> <span class="id" type="var">st</span> <span class="id" type="var">st'</span> <span class="id" type="var">b1</span> <span class="id" type="var">c1</span> <span class="id" type="var">c2</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="ImpList.html#beval"><span class="id" type="definition">beval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">b1</span> = <span class="id" type="constructor">false</span> <span style="font-family: arial;">&rarr;</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="var">c2</span> / <span class="id" type="var">st</span> <span style="font-family: arial;">&dArr;</span> <span class="id" type="var">st'</span> <span style="font-family: arial;">&rarr;</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" type="var">IFB</span> <span class="id" type="var">b1</span> <span class="id" type="var">THEN</span> <span class="id" type="var">c1</span> <span class="id" type="var">ELSE</span> <span class="id" type="var">c2</span> <span class="id" type="var">FI</span>) / <span class="id" type="var">st</span> <span style="font-family: arial;">&dArr;</span> <span class="id" type="var">st'</span><br/>
+&nbsp;&nbsp;| <a name="E_WhileEnd"><span class="id" type="constructor">E_WhileEnd</span></a> : <span style="font-family: arial;">&forall;</span> <span class="id" type="var">b1</span> <span class="id" type="var">st</span> <span class="id" type="var">c1</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="ImpList.html#beval"><span class="id" type="definition">beval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">b1</span> = <span class="id" type="constructor">false</span> <span style="font-family: arial;">&rarr;</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" type="var">WHILE</span> <span class="id" type="var">b1</span> <span class="id" type="var">DO</span> <span class="id" type="var">c1</span> <span class="id" type="var">END</span>) / <span class="id" type="var">st</span> <span style="font-family: arial;">&dArr;</span> <span class="id" type="var">st</span><br/>
+&nbsp;&nbsp;| <a name="E_WhileLoop"><span class="id" type="constructor">E_WhileLoop</span></a> : <span style="font-family: arial;">&forall;</span> <span class="id" type="var">st</span> <span class="id" type="var">st'</span> <span class="id" type="var">st''</span> <span class="id" type="var">b1</span> <span class="id" type="var">c1</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="ImpList.html#beval"><span class="id" type="definition">beval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">b1</span> = <span class="id" type="constructor">true</span> <span style="font-family: arial;">&rarr;</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="var">c1</span> / <span class="id" type="var">st</span> <span style="font-family: arial;">&dArr;</span> <span class="id" type="var">st'</span> <span style="font-family: arial;">&rarr;</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" type="var">WHILE</span> <span class="id" type="var">b1</span> <span class="id" type="var">DO</span> <span class="id" type="var">c1</span> <span class="id" type="var">END</span>) / <span class="id" type="var">st'</span> <span style="font-family: arial;">&dArr;</span> <span class="id" type="var">st''</span> <span style="font-family: arial;">&rarr;</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" type="var">WHILE</span> <span class="id" type="var">b1</span> <span class="id" type="var">DO</span> <span class="id" type="var">c1</span> <span class="id" type="var">END</span>) / <span class="id" type="var">st</span> <span style="font-family: arial;">&dArr;</span> <span class="id" type="var">st''</span><br/>
+<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">where</span> "c1 '/' st '<span style="font-family: arial;">&dArr;</span>' st'" := (<a class="idref" href="ImpList.html#ceval"><span class="id" type="inductive">ceval</span></a> <span class="id" type="var">st</span> <span class="id" type="var">c1</span> <span class="id" type="var">st'</span>).<br/>
+
+<br/>
+<span class="id" type="keyword">Tactic Notation</span> "ceval_cases" <span class="id" type="var">tactic</span>(<span class="id" type="var">first</span>) <span class="id" type="var">ident</span>(<span class="id" type="var">c</span>) :=<br/>
+&nbsp;&nbsp;<span class="id" type="var">first</span>;<br/>
+&nbsp;&nbsp;[ <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "E_Skip" | <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "E_Asgn" | <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "E_Seq"<br/>
+&nbsp;&nbsp;| <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "E_IfTrue" | <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "E_IfFalse"<br/>
+&nbsp;&nbsp;| <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "E_WhileEnd" | <span class="id" type="var">Case_aux</span> <span class="id" type="var">c</span> "E_WhileLoop" ].<br/>
+
+<br/>
+<span class="id" type="keyword">Definition</span> <a name="loop"><span class="id" type="definition">loop</span></a> : <a class="idref" href="ImpList.html#com"><span class="id" type="inductive">com</span></a> :=<br/>
+&nbsp;&nbsp;<span class="id" type="var">WHILE</span> <a class="idref" href="ImpList.html#BTrue"><span class="id" type="constructor">BTrue</span></a> <span class="id" type="var">DO</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="var">SKIP</span><br/>
+&nbsp;&nbsp;<span class="id" type="var">END</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Theorem</span> <a name="loop_never_stops"><span class="id" type="lemma">loop_never_stops</span></a> : <span style="font-family: arial;">&forall;</span> <span class="id" type="var">st</span> <span class="id" type="var">st'</span>,<br/>
+&nbsp;&nbsp;~(<a class="idref" href="ImpList.html#loop"><span class="id" type="definition">loop</span></a> / <span class="id" type="var">st</span> <span style="font-family: arial;">&dArr;</span> <span class="id" type="var">st'</span>).<br/>
+<span class="id" type="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">intros</span> <span class="id" type="var">st</span> <span class="id" type="var">st'</span> <span class="id" type="var">contra</span>. <span class="id" type="tactic">unfold</span> <span class="id" type="var">loop</span> <span class="id" type="keyword">in</span> <span class="id" type="var">contra</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="var">remember</span> (<span class="id" type="var">WHILE</span> <a class="idref" href="ImpList.html#BTrue"><span class="id" type="constructor">BTrue</span></a> <span class="id" type="var">DO</span> <span class="id" type="var">SKIP</span> <span class="id" type="var">END</span>) <span class="id" type="keyword">as</span> <span class="id" type="var">loopdef</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="var">ceval_cases</span> (<span class="id" type="tactic">induction</span> <span class="id" type="var">contra</span>) <span class="id" type="var">Case</span>; <span class="id" type="tactic">try</span> (<span class="id" type="tactic">inversion</span> <span class="id" type="var">Heqloopdef</span>).<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="var">Case</span> "E_WhileEnd".<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="tactic">rewrite</span> <span style="font-family: arial;">&rarr;</span> <span class="id" type="var">H1</span> <span class="id" type="keyword">in</span> <span class="id" type="var">H</span>. <span class="id" type="tactic">inversion</span> <span class="id" type="var">H</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="var">Case</span> "E_WhileLoop".<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="tactic">apply</span> <span class="id" type="var">IHcontra2</span>. <span class="id" type="tactic">subst</span>. <span class="id" type="tactic">reflexivity</span>. <span class="id" type="keyword">Qed</span>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="coqindex.html">Index</a><hr/>This page has been generated by <a href="http://www.lix.polytechnique.fr/coq/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>
