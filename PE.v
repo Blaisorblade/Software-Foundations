@@ -1051,7 +1051,7 @@ Hint Constructors pe_com.
 
 (** ** Examples *)
 
-Tactic Notation "step" ident(i) :=
+Tactic Notation "step" constr(i) :=
   (eapply i; intuition eauto; try solve by inversion);
   repeat (try eapply PE_Seq;
           try (eapply PE_AssStatic; simpl; reflexivity);
