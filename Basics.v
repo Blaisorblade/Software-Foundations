@@ -1393,15 +1393,15 @@ Theorem evenb_n__oddb_Sn : forall n : nat,
   evenb n = negb (evenb (S n)).
 Proof.
   intro n.
-  induction n as [|n'].
+  induction n as [| n'].
 
   Case "n = 0".
   reflexivity.
 
   Case "n = S n'".
   rewrite evenb_S_S.
-  rewrite <- negb_involutive at 1.
   rewrite IHn'.
+  rewrite negb_involutive.
   reflexivity. (* Proof finished. *)
   Restart.
 
