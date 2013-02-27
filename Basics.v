@@ -1392,14 +1392,7 @@ Qed.
 Theorem evenb_n__oddb_Sn : forall n : nat,
   evenb n = negb (evenb (S n)).
 Proof.
-  destruct n.
-
-  Case "n = 0".
-  reflexivity.
-
-  rewrite evenb_S.
-  rewrite evenb_S_S.
-  reflexivity.
+  destruct n; try (rewrite evenb_S; rewrite evenb_S_S); reflexivity.
 Qed.
 (** [] *)
 
