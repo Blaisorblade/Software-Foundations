@@ -1665,73 +1665,25 @@ Fixpoint natToBin(n : nat) : binary :=
     | S n' => inc (natToBin n')
   end.
 
-Fixpoint isBinNull (n : binary ) : bool :=
+Theorem binToNat_works : forall n : nat, binToNat (natToBin n) = n.
+  induction n as [| n']; simpl; try reflexivity.
+
+  rewrite inc_works.
+  congruence. (* Equivalent to: rewrite IHn'. reflexivity. *)
+Qed.
+
+Fixpoint isBinNull (n : binary) : bool :=
   match n with
     | bO => true
     | b21 n' => false
     | b2 n' => isBinNull n'
   end.
 
-Fixpoint normalize (n : binary) : binary :=
-  match n with
-    | bO => bO
-    | b21 n' => b21 (normalize n')
-    | b2 n' => if isBinNull n' then bO else b2 (normalize n')
-  end.
-
-Lemma binToNat_works : forall n : nat, binToNat (natToBin n) = n.
-  induction n as [| n'].
-  reflexivity.
-  simpl.
-  rewrite inc_works.
-  congruence. (* Equivalent to: rewrite IHn'. reflexivity. *)
-Qed.
-
-
-Lemma isBinNull_works_bad : forall n : binary, if isBinNull n then binToNat n = 0 else 0 = 0.
-Proof.
-  intros.
-  induction n; try reflexivity.
-  destruct (isBinNull _); try reflexivity.
-  simpl.
-  rewrite IHn.
-  reflexivity.
-Qed.
-
 Lemma isBinNull_works : forall n : binary, isBinNull n = true -> binToNat n = 0.
   induction n; simpl; try reflexivity.
 
   intros H.
   rewrite (IHn H).
-  reflexivity.
-
-  intros.
-  discriminate.
-Qed.
-
-Lemma pushout_inc_inc_b2 : forall b : binary, inc (inc (b2 b)) = b2 (inc b).
-  destruct b; try reflexivity.
-Qed.
-
-Lemma foo3: forall n : nat, natToBin ((S n) + (S n)) = b2 (natToBin (S n)).
-Proof.
-intros.
-induction n; try reflexivity.
-revert IHn.
-repeat (rewrite <- plus_n_Sm).
-simpl.
-intros.
-rewrite IHn.
-rewrite pushout_inc_inc_b2.
-reflexivity.
-Qed.
-
-Lemma isBinNull_works_normalize : forall n : binary, isBinNull n = true -> normalize n = bO.
-  induction n; simpl; try reflexivity.
-
-  intros H.
-  rewrite (IHn H).
-  rewrite H.
   reflexivity.
 
   intros.
@@ -1745,11 +1697,10 @@ Lemma isBinNull_works_2: forall b : binary, isBinNull b = false -> exists m : na
   discriminate.
 
   Case "b2".
-  revert H.
-  simpl.
-  intros.
 
-  rewrite plus_0_r.
+  revert H.
+  simpl; rewrite plus_0_r.
+  intros.
 
   elim (IHb' H).
   intros.
@@ -1757,95 +1708,65 @@ Lemma isBinNull_works_2: forall b : binary, isBinNull b = false -> exists m : na
   rewrite H0.
 
   rewrite plus_Sn_m.
-
   reflexivity.
 
   Case "b21".
+
   exists (2 * binToNat b').
-  simpl.
-  rewrite plus_0_r.
+  simpl; rewrite plus_0_r.
   reflexivity.
 Qed.
 
-Lemma foo2: forall n : binary, isBinNull n = false -> natToBin (binToNat n + binToNat n) = b2 (natToBin (binToNat n)).
-Proof.
-  intros.
-  induction n.
-  Case "b0".
-  revert H.
-  simpl.
-  intros.
-  discriminate.
+Fixpoint normalize (n : binary) : binary :=
+  match n with
+    | bO => bO
+    | b21 n' => b21 (normalize n')
+    | b2 n' => if isBinNull n' then bO else b2 (normalize n')
+  end.
+
+Lemma isBinNull_works_normalize : forall n : binary, isBinNull n = true -> normalize n = bO.
+  induction n; simpl; try reflexivity.
 
   Case "b2".
-  elim (isBinNull_works_2 (b2 n) H).
-  intros x H0.
-  rewrite H0.
-  apply (foo3 x).
+  intros H.
+  rewrite (IHn H).
+  rewrite H.
+  reflexivity.
 
   Case "b21".
-  elim (isBinNull_works_2 (b21 n) H).
-  intros x H0.
-  rewrite H0.
-  apply (foo3 x).
+  discriminate.
+Qed.
 
-  Restart.
+(* Could be inlined in the proof of pushout_natToBin_2S *)
+Lemma pushout_inc_inc_b2 : forall b : binary, inc (inc (b2 b)) = b2 (inc b).
+  destruct b; try reflexivity.
+Qed.
+
+Lemma pushout_natToBin_2S: forall n : nat, natToBin ((S n) + (S n)) = b2 (natToBin (S n)).
+Proof.
+  induction n; try reflexivity.
+  revert IHn.
+  repeat (rewrite <- plus_n_Sm).
+  simpl.
+  intros.
+  rewrite IHn.
+  rewrite pushout_inc_inc_b2.
+  reflexivity.
+Qed.
+
+Lemma pushout_natToBin_2BinToNat: forall n : binary, isBinNull n = false -> natToBin (binToNat n + binToNat n) = b2 (natToBin (binToNat n)).
+Proof.
   intros.
   elim (isBinNull_works_2 n H).
   intros x H0.
   rewrite H0.
-  apply (foo3 x).
+  apply (pushout_natToBin_2S x).
 Qed.
 
 Theorem correct_normalize : forall n : binary, natToBin (binToNat n) = normalize n.
-  induction n as [| n' | n']; try reflexivity.
+  induction n as [| n' | n']; simpl; try reflexivity.
+
   Case "b2".
-  simpl.
-
-  compare (isBinNull n') true.
-
-  intros.
-  rewrite e.
-  replace (binToNat n') with O.
-  reflexivity.
-  induction n'; try reflexivity.
-
-  Restart.
-
-  induction n as [| n' | n']; try reflexivity.
-  Case "b2".
-
-  revert IHn'.
-  unfold normalize.
-  simpl.
-  destruct (isBinNull _).
-  simpl.
-  fold normalize.
-  Restart.
-
-  intros.
-  induction n as [| n' | n']; try reflexivity.
-  Case "b2".
-  simpl.
-
-  compare (isBinNull n') true.
-  intro e.
-  rewrite e.
-  rewrite isBinNull_works.
-  reflexivity.
-  assumption.
-  intros n.
-  (*rewrite n.
-  replace (binToNat n') with O.
-  reflexivity.
-  induction n'; try reflexivity.*)
-
-  Restart.
-
-  intros.
-  induction n as [| n' | n']; try reflexivity.
-  Case "b2".
-  simpl.
 
   destruct (isBinNull _) eqn:e.   (* Instead of: compare (isBinNull n') true. *)
   rewrite isBinNull_works.
@@ -1855,10 +1776,10 @@ Theorem correct_normalize : forall n : binary, natToBin (binToNat n) = normalize
   rewrite plus_assoc.
   rewrite plus_0_r.
 
-  apply (foo2 n' e).
+  apply (pushout_natToBin_2BinToNat n' e).
 
   Case "b21".
-  simpl.
+
   rewrite plus_assoc.
   rewrite plus_0_r.
   destruct (isBinNull n') eqn:e.   (* Instead of: compare (isBinNull n') true. *)
@@ -1867,13 +1788,10 @@ Theorem correct_normalize : forall n : binary, natToBin (binToNat n) = normalize
   rewrite (isBinNull_works_normalize n' e).
   reflexivity.
 
-  rewrite (foo2 n' e).
+  rewrite (pushout_natToBin_2BinToNat n' e).
   rewrite <- IHn'.
   reflexivity.
 Qed.
-
-(* FILL IN HERE *)
-
 
 (** **** Exercise: 2 stars, optional (decreasing) *)
 (** The requirement that some argument to each function be
@@ -1895,5 +1813,16 @@ Fixpoint div (m : nat) (n : nat) : nat :=
   else 1 + div (m - n) n.
 *)
 
+(* Reading
+http://www.di.ens.fr/~zappa/teaching/coq/ecole11/summer/lectures/lec9.pdf
+suggested that this variant would work - but that's not the case:
+
+Fixpoint div' (m : nat) (n : nat) : nat :=
+  match m with
+    | O => O
+    | S m' => S (div' (minus m n) n)
+  end.
+
+*)
 (** [] *)
 
