@@ -1688,42 +1688,8 @@ Lemma binToNat_works : forall n : nat, binToNat (natToBin n) = n.
 Qed.
 
 
-Lemma isBinNull_works : forall n : binary, if isBinNull n then binToNat n = 0 else 0 = 0.
+Lemma isBinNull_works_bad : forall n : binary, if isBinNull n then binToNat n = 0 else 0 = 0.
 Proof.
-  intros.
-  compare (isBinNull n) true.
-  Case "isBinNull n".
-  intros.
-  rewrite e.
-  induction n; try reflexivity.
-
-  SCase "b2".
-  revert e.
-  simpl.
-  intros.
-  rewrite (IHn e).
-  reflexivity.
-
-  SCase "b21".
-  revert e.
-  simpl.
-  intros.
-  discriminate.
-
-  Restart.
-
-  intros.
-  induction n; try reflexivity.
-  compare (isBinNull n) true.
-  intros.
-  revert IHn.
-  simpl.
-  rewrite e.
-  intros.
-  rewrite IHn.
-  reflexivity.
-
-  Restart.
   intros.
   induction n; try reflexivity.
   destruct (isBinNull _); try reflexivity.
@@ -1732,7 +1698,7 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma isBinNull_works2 : forall n : binary, isBinNull n = true -> binToNat n = 0.
+Lemma isBinNull_works : forall n : binary, isBinNull n = true -> binToNat n = 0.
   induction n; simpl; try reflexivity.
 
   intros H.
@@ -1743,11 +1709,26 @@ Lemma isBinNull_works2 : forall n : binary, isBinNull n = true -> binToNat n = 0
   discriminate.
 Qed.
 
-Lemma invert_bool : forall a : bool, a <> true -> a = false.
-intros.
-destruct a.
-Admitted.
+Lemma pushout_inc_inc_b2 : forall b : binary, inc (inc (b2 b)) = b2 (inc b).
+  destruct b; try reflexivity.
+Qed.
 
+Lemma foo3: forall n : nat, natToBin ((S n) + (S n)) = b2 (natToBin (S n)).
+Proof.
+intros.
+induction n; try reflexivity.
+revert IHn.
+repeat (rewrite <- plus_n_Sm).
+simpl.
+intros.
+rewrite IHn.
+rewrite pushout_inc_inc_b2.
+reflexivity.
+Qed.
+
+Lemma foo2: forall n' : binary, natToBin (binToNat n' + binToNat n') = b2 (natToBin (binToNat n')).
+Proof.
+Admitted.
 
 Lemma bar : forall n : binary, natToBin (binToNat n) = normalize n.
   induction n as [| n' | n']; try reflexivity.
@@ -1783,7 +1764,7 @@ Lemma bar : forall n : binary, natToBin (binToNat n) = normalize n.
   compare (isBinNull n') true.
   intro e.
   rewrite e.
-  rewrite isBinNull_works2.
+  rewrite isBinNull_works.
   reflexivity.
   assumption.
   intros n.
@@ -1800,7 +1781,7 @@ Lemma bar : forall n : binary, natToBin (binToNat n) = normalize n.
   simpl.
 
   destruct (isBinNull _) eqn:e.   (* Instead of: compare (isBinNull n') true. *)
-  rewrite isBinNull_works2.
+  rewrite isBinNull_works.
   reflexivity.
   assumption.
   rewrite <- IHn'.
@@ -1808,35 +1789,6 @@ Lemma bar : forall n : binary, natToBin (binToNat n) = normalize n.
   rewrite plus_0_r.
   admit.
 
-Lemma foo2: forall n' : binary, natToBin (binToNat n' + binToNat n') = b2 (natToBin (binToNat n')).
-Proof.
-
-Lemma inc_inc_works : forall b : binary, inc (inc (b2 b)) = b2 (inc b).
-  destruct b; try reflexivity.
-Qed.
-
-Lemma foo3: forall n : nat, natToBin ((S n) + (S n)) = b2 (natToBin (S n)).
-Proof.
-intros.
-induction n; try reflexivity.
-simpl.
-rewrite <- plus_n_Sm.
-revert IHn.
-simpl.
-intros.
-rewrite IHn.
-
-Restart.
-intros.
-induction n; try reflexivity.
-revert IHn.
-repeat (rewrite <- plus_n_Sm).
-simpl.
-intros.
-rewrite IHn.
-rewrite inc_inc_works.
-reflexivity.
-Qed.
 (* FILL IN HERE *)
 
 
