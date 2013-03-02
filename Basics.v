@@ -1650,7 +1650,61 @@ Qed.
         natural and then back to binary yields [(normalize b)].  Prove
         it.
 *)
+(*Notation "x < y" := (blt_nat x y)  (at level 70, left associativity) : nat_scope.
+Notation "x <= y" := (ble_nat x y)  (at level 50, left associativity) : nat_scope.*)
 
+(*
+Hard to prove termination:
+
+Fixpoint div (m : nat) (n : nat) : nat :=
+  if blt_nat m n
+  then 0
+  else 1 + div (m - n) n.
+
+Fixpoint divRem (m : nat) (n : nat) : (nat * nat) :=
+  if blt_nat m n
+  then (0, m)
+  else let (quot, rem) := divRem (m - n) n in (1 + quot, rem).
+*)
+
+Fixpoint divRem2 (n : nat) : (nat * nat) :=
+  match n with
+    | S (S n') => let (quot, rem) := divRem2 n' in (1 + quot, rem)
+    | S O => (0, 1)
+    | O => (0, 0)
+  end.
+
+(*
+Non-obviously terminating.
+
+Fixpoint natToBin(n : nat) : binary :=
+  let (quot, rem) := divRem2 n in
+  match rem with
+    | 0 => b2 (natToBin quot)
+    | 1 => b21 (natToBin quot)
+    | _ => bO
+  end.
+*)
+
+Fixpoint natToBin(n : nat) : binary :=
+  match n with
+    | O => bO
+    | S n' => inc (natToBin n')
+  end.
+
+Fixpoint isBinNull (n : binary ) : bool :=
+  match n with
+    | bO => true
+    | b21 n' => false
+    | b2 n' => isBinNull n'
+  end.
+
+Fixpoint normalize (n : binary) : binary :=
+  match n with
+    | bO => bO
+    | b21 n' => b21 (normalize n')
+    | b2 n' => if isBinNull n' then bO else b2 (normalize n')
+  end.
 (* FILL IN HERE *)
 
 
