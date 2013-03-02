@@ -1411,31 +1411,47 @@ Qed.
 Theorem ble_nat_refl : forall n:nat,
   true = ble_nat n n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n as [| n'].
+  reflexivity.
+  simpl.
+  assumption.
+Qed.
 
 Theorem zero_nbeq_S : forall n:nat,
   beq_nat 0 (S n) = false.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intro n.
+  simpl.
+  reflexivity.
+Qed.
 
 Theorem andb_false_r : forall b : bool,
   andb b false = false.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  destruct b; reflexivity.
+Qed.
 
 Theorem plus_ble_compat_l : forall n m p : nat, 
   ble_nat n m = true -> ble_nat (p + n) (p + m) = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m p H.
+  induction p as [| p']; simpl; assumption.
+Qed.
 
 Theorem S_nbeq_0 : forall n:nat,
   beq_nat (S n) 0 = false.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  reflexivity.
+Qed.
 
 Theorem mult_1_l : forall n:nat, 1 * n = n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intro n.
+  simpl.
+  rewrite plus_0_r.
+  reflexivity.
+Qed.
 
 Theorem all3_spec : forall b c : bool,
     orb
@@ -1444,17 +1460,67 @@ Theorem all3_spec : forall b c : bool,
                (negb c))
   = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  destruct b; destruct c; reflexivity.
+Qed.
 
 Theorem mult_plus_distr_r : forall n m p : nat,
   (n + m) * p = (n * p) + (m * p).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction p as [| p'].
+
+  Case "p = 0".
+  repeat (rewrite mult_0_r).
+  reflexivity.
+
+  Case "p = p' + 1".
+  repeat (rewrite mult_S).
+  rewrite IHp'.
+  rewrite <- plus_assoc.
+
+  assert (m * p' + (n + m) = n + (m * p' + m)) as H.
+  SCase "H".
+  rewrite plus_comm.
+  rewrite <- plus_assoc.
+
+  assert (m + m * p' = m * p' + m) as H2.
+  SSCase "H2".
+  rewrite plus_comm.
+  reflexivity.
+
+  SCase "H".
+  congruence.
+
+  Case "p = p' + 1".
+  rewrite H.
+  rewrite plus_assoc.
+  reflexivity.
+Qed.
+
+SearchRewrite ((S _) * _).
+Theorem mult_succ_l : forall n m : nat, S n * m = n * m + m.
+Proof.
+  intros n m.
+  rewrite plus_comm.
+  reflexivity.
+Qed.
 
 Theorem mult_assoc : forall n m p : nat,
   n * (m * p) = (n * m) * p.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m p.
+  induction n as [| n'].
+
+  Case "n = 0". reflexivity.
+
+  Case "n = n' + 1".
+  rewrite mult_succ_l.
+  rewrite plus_comm.
+  rewrite IHn'.
+  simpl.
+  rewrite mult_plus_distr_r.
+  reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (plus_swap') *)
@@ -1472,7 +1538,16 @@ Proof.
 Theorem plus_swap' : forall n m p : nat, 
   n + (m + p) = m + (n + p).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m p.
+  rewrite -> plus_assoc at 1.
+  replace (n + m) with (m + n).
+
+  rewrite <- plus_assoc at 1.
+  reflexivity.
+
+  Case "replace proof obligation".
+  rewrite -> plus_comm. reflexivity.
+Qed.
 (** [] *)
 
 
@@ -1514,6 +1589,44 @@ Proof.
 *)
 
 (* FILL IN HERE *)
+Inductive binary : Type :=
+| bO  : binary
+| b2  : binary -> binary
+| b21 : binary -> binary.
+
+Fixpoint inc (b : binary) : binary :=
+  match b with
+    | bO => b21 bO
+    | b2 b' => b21 b'
+    | b21 b' => b2 (inc b')
+  end.
+Fixpoint binToUnary (b : binary) : nat :=
+  match b with
+    | bO => 0
+    | b2 b' => 2 * binToUnary (b')
+    | b21 b' => 1 + 2 * binToUnary (b')
+  end.
+
+Example binToUnary6: binToUnary (b2 (b21 (b21 bO))) = 6.
+Proof. reflexivity.  Qed.
+
+Theorem commuting : forall b : binary, binToUnary (inc b) = 1 + binToUnary b.
+Proof.
+  induction b.
+
+  Case "bO".
+  reflexivity.
+
+  Case "b2".
+  reflexivity.
+
+  Case "b21".
+  progress simpl.
+  rewrite IHb.
+  progress simpl.
+  rewrite <- plus_n_Sm.
+  reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 5 stars (binary_inverse) *)
