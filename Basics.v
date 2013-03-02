@@ -1600,33 +1600,34 @@ Fixpoint inc (b : binary) : binary :=
     | b2 b' => b21 b'
     | b21 b' => b2 (inc b')
   end.
-Fixpoint binToUnary (b : binary) : nat :=
+Fixpoint binToNat (b : binary) : nat :=
   match b with
     | bO => 0
-    | b2 b' => 2 * binToUnary (b')
-    | b21 b' => 1 + 2 * binToUnary (b')
+    | b2 b' => 2 * binToNat (b')
+    | b21 b' => 1 + 2 * binToNat (b')
   end.
 
-Example binToUnary6: binToUnary (b2 (b21 (b21 bO))) = 6.
+Example binToNat6: binToNat (b2 (b21 (b21 bO))) = 6.
 Proof. reflexivity.  Qed.
 
-Theorem commuting : forall b : binary, binToUnary (inc b) = 1 + binToUnary b.
+Theorem inc_works : forall b : binary, binToNat (inc b) = S (binToNat b).
 Proof.
-  induction b.
-
-  Case "bO".
-  reflexivity.
-
-  Case "b2".
-  reflexivity.
+  induction b as [| b' | b']; try reflexivity.
 
   Case "b21".
   progress simpl.
-  rewrite IHb.
+
+  rewrite IHb'.
+  (* Could also add:
+progress (repeat (rewrite plus_0_r)).
+  *)
+
   progress simpl.
   rewrite <- plus_n_Sm.
+
   reflexivity.
 Qed.
+
 (** [] *)
 
 (** **** Exercise: 5 stars (binary_inverse) *)
@@ -1677,6 +1678,165 @@ Fixpoint normalize (n : binary) : binary :=
     | b21 n' => b21 (normalize n')
     | b2 n' => if isBinNull n' then bO else b2 (normalize n')
   end.
+
+Lemma binToNat_works : forall n : nat, binToNat (natToBin n) = n.
+  induction n as [| n'].
+  reflexivity.
+  simpl.
+  rewrite inc_works.
+  congruence. (* Equivalent to: rewrite IHn'. reflexivity. *)
+Qed.
+
+
+Lemma isBinNull_works : forall n : binary, if isBinNull n then binToNat n = 0 else 0 = 0.
+Proof.
+  intros.
+  compare (isBinNull n) true.
+  Case "isBinNull n".
+  intros.
+  rewrite e.
+  induction n; try reflexivity.
+
+  SCase "b2".
+  revert e.
+  simpl.
+  intros.
+  rewrite (IHn e).
+  reflexivity.
+
+  SCase "b21".
+  revert e.
+  simpl.
+  intros.
+  discriminate.
+
+  Restart.
+
+  intros.
+  induction n; try reflexivity.
+  compare (isBinNull n) true.
+  intros.
+  revert IHn.
+  simpl.
+  rewrite e.
+  intros.
+  rewrite IHn.
+  reflexivity.
+
+  Restart.
+  intros.
+  induction n; try reflexivity.
+  destruct (isBinNull _); try reflexivity.
+  simpl.
+  rewrite IHn.
+  reflexivity.
+Qed.
+
+Lemma isBinNull_works2 : forall n : binary, isBinNull n = true -> binToNat n = 0.
+  induction n; simpl; try reflexivity.
+
+  intros H.
+  rewrite (IHn H).
+  reflexivity.
+
+  intros.
+  discriminate.
+Qed.
+
+Lemma invert_bool : forall a : bool, a <> true -> a = false.
+intros.
+destruct a.
+Admitted.
+
+
+Lemma bar : forall n : binary, natToBin (binToNat n) = normalize n.
+  induction n as [| n' | n']; try reflexivity.
+  Case "b2".
+  simpl.
+
+  compare (isBinNull n') true.
+
+  intros.
+  rewrite e.
+  replace (binToNat n') with O.
+  reflexivity.
+  induction n'; try reflexivity.
+
+  Restart.
+
+  induction n as [| n' | n']; try reflexivity.
+  Case "b2".
+
+  revert IHn'.
+  unfold normalize.
+  simpl.
+  destruct (isBinNull _).
+  simpl.
+  fold normalize.
+  Restart.
+
+  intros.
+  induction n as [| n' | n']; try reflexivity.
+  Case "b2".
+  simpl.
+
+  compare (isBinNull n') true.
+  intro e.
+  rewrite e.
+  rewrite isBinNull_works2.
+  reflexivity.
+  assumption.
+  intros n.
+  (*rewrite n.
+  replace (binToNat n') with O.
+  reflexivity.
+  induction n'; try reflexivity.*)
+
+  Restart.
+
+  intros.
+  induction n as [| n' | n']; try reflexivity.
+  Case "b2".
+  simpl.
+
+  destruct (isBinNull _) eqn:e.   (* Instead of: compare (isBinNull n') true. *)
+  rewrite isBinNull_works2.
+  reflexivity.
+  assumption.
+  rewrite <- IHn'.
+  rewrite plus_assoc.
+  rewrite plus_0_r.
+  admit.
+
+Lemma foo2: forall n' : binary, natToBin (binToNat n' + binToNat n') = b2 (natToBin (binToNat n')).
+Proof.
+
+Lemma inc_inc_works : forall b : binary, inc (inc (b2 b)) = b2 (inc b).
+  destruct b; try reflexivity.
+Qed.
+
+Lemma foo3: forall n : nat, natToBin ((S n) + (S n)) = b2 (natToBin (S n)).
+Proof.
+intros.
+induction n; try reflexivity.
+simpl.
+rewrite <- plus_n_Sm.
+revert IHn.
+simpl.
+intros.
+rewrite IHn.
+
+Restart.
+intros.
+induction n; try reflexivity.
+revert IHn.
+repeat (rewrite <- plus_n_Sm).
+simpl.
+intros.
+rewrite IHn.
+rewrite inc_inc_works.
+reflexivity.
+Qed.
 (* FILL IN HERE *)
 
 
