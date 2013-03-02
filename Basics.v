@@ -1726,11 +1726,78 @@ rewrite pushout_inc_inc_b2.
 reflexivity.
 Qed.
 
-Lemma foo2: forall n' : binary, natToBin (binToNat n' + binToNat n') = b2 (natToBin (binToNat n')).
-Proof.
-Admitted.
+Lemma isBinNull_works_normalize : forall n : binary, isBinNull n = true -> normalize n = bO.
+  induction n; simpl; try reflexivity.
 
-Lemma bar : forall n : binary, natToBin (binToNat n) = normalize n.
+  intros H.
+  rewrite (IHn H).
+  rewrite H.
+  reflexivity.
+
+  intros.
+  discriminate.
+Qed.
+
+Lemma isBinNull_works_2: forall b : binary, isBinNull b = false -> exists m : nat, binToNat b = S m.
+  intros.
+  induction b as [ | b' | b'].
+  Case "bO".
+  discriminate.
+
+  Case "b2".
+  revert H.
+  simpl.
+  intros.
+
+  rewrite plus_0_r.
+
+  elim (IHb' H).
+  intros.
+  exists (x + S x).
+  rewrite H0.
+
+  rewrite plus_Sn_m.
+
+  reflexivity.
+
+  Case "b21".
+  exists (2 * binToNat b').
+  simpl.
+  rewrite plus_0_r.
+  reflexivity.
+Qed.
+
+Lemma foo2: forall n : binary, isBinNull n = false -> natToBin (binToNat n + binToNat n) = b2 (natToBin (binToNat n)).
+Proof.
+  intros.
+  induction n.
+  Case "b0".
+  revert H.
+  simpl.
+  intros.
+  discriminate.
+
+  Case "b2".
+  elim (isBinNull_works_2 (b2 n) H).
+  intros x H0.
+  rewrite H0.
+  apply (foo3 x).
+
+  Case "b21".
+  elim (isBinNull_works_2 (b21 n) H).
+  intros x H0.
+  rewrite H0.
+  apply (foo3 x).
+
+  Restart.
+  intros.
+  elim (isBinNull_works_2 n H).
+  intros x H0.
+  rewrite H0.
+  apply (foo3 x).
+Qed.
+
+Theorem correct_normalize : forall n : binary, natToBin (binToNat n) = normalize n.
   induction n as [| n' | n']; try reflexivity.
   Case "b2".
   simpl.
@@ -1787,7 +1854,23 @@ Lemma bar : forall n : binary, natToBin (binToNat n) = normalize n.
   rewrite <- IHn'.
   rewrite plus_assoc.
   rewrite plus_0_r.
-  admit.
+
+  apply (foo2 n' e).
+
+  Case "b21".
+  simpl.
+  rewrite plus_assoc.
+  rewrite plus_0_r.
+  destruct (isBinNull n') eqn:e.   (* Instead of: compare (isBinNull n') true. *)
+  rewrite (isBinNull_works n' e).
+  simpl.
+  rewrite (isBinNull_works_normalize n' e).
+  reflexivity.
+
+  rewrite (foo2 n' e).
+  rewrite <- IHn'.
+  reflexivity.
+Qed.
 
 (* FILL IN HERE *)
 
