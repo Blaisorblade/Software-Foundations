@@ -242,19 +242,49 @@ _Proof_: Let [m] be a [nat]. We prove by induction on [m] that, for
 (** **** Exercise: 3 stars (gen_dep_practice) *)
 (** Carry out this proof by induction on [m]. *)
 
+Require Import LibTactics.
+
 Theorem plus_n_n_injective_take2 : forall n m,
      n + n = m + m ->
      n = m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  introv.
+  generalize dependent n.
+  induction m as [|m'].
 
+  Case "m = 0".
+    simpl. introv H.
+    destruct n as [|n'].
+    SCase "n = 0". reflexivity.
+    SCase "n = S n'". inversion H.
+
+  Case "m = S m'".
+    introv H.
+    destruct n as [|n'].
+    SCase "n = 0". inversion H.
+
+    SCase "n = S n'".
+      simpl in H. repeat (rewrite <- plus_n_Sm in H).
+      inversion H as [[H1]].
+      apply IHm' in H1.
+      congruence.
+Qed.
 (** Now prove this by induction on [l]. *)
 
 Theorem index_after_last: forall (n : nat) (X : Type) (l : list X),
      length l = n ->
      index (S n) l = None.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  introv. generalize dependent n. induction l as [|x l'].
+  Case "l = []". reflexivity.
+  Case "l = x :: l'".
+    simpl. introv H.
+    destruct n as [|n'].
+    SCase "n = 0". inversion H.
+    SCase "n = S n'".
+      inversion H as [[H1]].
+      apply IHl'. reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, optional (index_after_last_informal) *)
@@ -277,7 +307,16 @@ Theorem length_snoc''' : forall (n : nat) (X : Type)
      length l = n ->
      length (snoc l v) = S n. 
 Proof.
-  (* FILL IN HERE *) Admitted.
+  introv. generalize dependent n. induction l as [|x l']; simpl.
+  Case "l = []".
+    congruence.
+  Case "l = x :: l'".
+    introv H. destruct n as [|n'].
+    SCase "n = 0". inversion H.
+    SCase "n = S n'".
+      inversion H as [H1].
+      apply IHl' in H1. congruence.
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, optional (app_length_cons) *)
@@ -288,7 +327,16 @@ Theorem app_length_cons : forall (X : Type) (l1 l2 : list X)
      length (l1 ++ (x :: l2)) = n ->
      S (length (l1 ++ l2)) = n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  introv. generalize dependent n. induction l1 as [|x1 l1'].
+  Case "l1 = []". intros. assumption.
+  Case "l1 = x1 :: l1'".
+    simpl. introv H. destruct n as [|n'].
+    SCase "n = 0". inversion H.
+    SCase "n = S n'".
+      (* auto using IHl1'. *)
+      inversion H as [H1].
+      apply IHl1' in H1. congruence.
+Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, optional (app_length_twice) *)
@@ -298,5 +346,24 @@ Theorem app_length_twice : forall (X:Type) (n:nat) (l:list X),
      length l = n ->
      length (l ++ l) = n + n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  introv. generalize dependent n. induction l as [|x' l'].
+  Case "l = []". 
+    introv H. rewrite <- H. reflexivity.
+  Case "l = x' :: l'".
+    introv H. destruct n as [|n'].
+    SCase "n = 0". inversion H.
+    SCase "n = S n'".
+      inversion H as [H1].
+      apply IHl' in H1.
+      simpl. rewrite <- plus_n_Sm.
+      assert (H2: forall l1 l2 (x : X), length (l1 ++ (x :: l2)) = S (length (l1 ++ l2))).
+      SSCase "Proof of assertion".
+        clear. introv. generalize dependent l1.
+        induction l1 as [|x1 l1'].
+        
+        SSSCase "l1 = []". reflexivity.
+        SSSCase "l1 = x1 :: l1'". simpl. congruence.
+      inversion H as [eql].
+      rewrite H2. rewrite H1. rewrite eql. reflexivity.
+Qed.
 (** [] *)

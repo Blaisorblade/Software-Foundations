@@ -409,11 +409,24 @@ Definition okd_before2 := forall d1 d2 d3,
 
     It should be easy to see how we'd construct a tactic proof of
     [okd_before2]... *)
-  
+Require Import LibTactics.
 (** **** Exercise: 1 star, optional (okd_before2_valid) *)
 Theorem okd_before2_valid : okd_before2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold okd_before2.
+(* okd_before *)
+(*      : forall d1 d2 : day, ok_day d2 -> day_before d2 d1 -> ok_day d1 *)
+  introv H H0 H1.
+  generalize dependent H0.
+  apply okd_before.
+  generalize dependent H1.
+  generalize dependent H.
+  apply okd_before.
+  Restart.
+  unfold okd_before2. introv H H0 H1.
+  apply okd_before with (d2 := d2);
+    [ apply okd_before with (d1 := d2) (d2 := d3) | ]; assumption.
+Qed.
 (** [] *)
 
 (** But what should the corresponding proof object look like? 
@@ -505,7 +518,10 @@ Proof.
 Theorem plus_one_r' : forall n:nat, 
   n + 1 = S n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  apply nat_ind.
+  Case "O". reflexivity.
+  Case "S". simpl. introv H. rewrite H. reflexivity.
+Qed.
 (** [] *)
 
 (** The induction principles that Coq generates for other
@@ -545,7 +561,10 @@ Inductive rgb : Type :=
   | red : rgb
   | green : rgb
   | blue : rgb.
+(* rgb_ind : forall P : rgb -> Prob, P red -> P green -> P blue ->
+forall r : rgb, P r *)
 Check rgb_ind.
+
 (** [] *)
 
 (** Here's another example, this time with one of the constructors
@@ -572,6 +591,19 @@ Inductive natlist1 : Type :=
   | nsnoc1 : natlist1 -> nat -> natlist1.
 
 (** Now what will the induction principle look like? *)
+(* ===> (modulo a little tidying)
+   natlist1_ind :
+      forall P : natlist1 -> Prop,
+         P nnil1  ->
+         (forall (l : natlist1) (n : nat), P l -> P (nsnoc1 l n)) ->
+         forall n : natlist1, P n *)
+Check natlist1_ind.
+(* natlist1_ind *)
+(*      : forall P : natlist1 -> Prop, *)
+(*        P nnil1 -> *)
+(*        (forall l : natlist1, P l -> forall n : nat, P (nsnoc1 l n)) -> *)
+(*        forall n : natlist1, P n *)
+
 (** [] *)
 
 (** From these examples, we can extract this general rule:
@@ -600,8 +632,8 @@ Inductive natlist1 : Type :=
     Give an [Inductive] definition of [ExSet]: *)
 
 Inductive ExSet : Type :=
-  (* FILL IN HERE *)
-.
+  | con1 : bool -> ExSet
+  | con2 : nat -> ExSet -> ExSet.
 
 (** [] *)
 
@@ -640,7 +672,17 @@ Inductive ExSet : Type :=
 Inductive tree (X:Type) : Type :=
   | leaf : X -> tree X
   | node : tree X -> tree X -> tree X.
+(* tree_ind :
+  forall X (P : tree X -> Prop),
+    (forall x : X, P (leaf X x)) ->
+    (forall t1 : tree X, P t1 -> forall t2 : tree X, P t2 -> P (node X t1 t2)) ->
+    forall t : tree X, P t. *)
 Check tree_ind.
+(* tree_ind *)
+(*      : forall (X : Type) (P : tree X -> Prop), *)
+(*        (forall x : X, P (leaf X x)) -> *)
+(*        (forall t : tree X, P t -> forall t0 : tree X, P t0 -> P (node X t t0)) -> *)
+(*        forall t : tree X, P t *)
 (** [] *)
 
 (** **** Exercise: 1 star (mytype) *)
@@ -655,7 +697,18 @@ Check tree_ind.
                forall n : nat, P (constr3 X m n)) ->
             forall m : mytype X, P m                   
 ]]
-*) 
+*)
+Inductive mytype (X : Type) : Type :=
+  | constr1 : X -> mytype X
+  | constr2 : nat -> mytype X
+  | constr3 : mytype X -> nat -> mytype X.
+Check mytype_ind.
+(* mytype_ind *)
+(*      : forall (X : Type) (P : mytype X -> Prop), *)
+(*        (forall x : X, P (constr1 X x)) -> *)
+(*        (forall n : nat, P (constr2 X n)) -> *)
+(*        (forall m : mytype X, P m -> forall n : nat, P (constr3 X m n)) -> *)
+(*        forall m : mytype X, P m *)
 (** [] *)
 
 (** **** Exercise: 1 star, optional (foo) *)
@@ -670,7 +723,12 @@ Check tree_ind.
                (forall n : nat, P (f1 n)) -> P (quux X Y f1)) ->
              forall f2 : foo X Y, P f2       
 ]]
-*) 
+*)
+Inductive foo (X Y : Type) : Type :=
+  | bar : X -> foo X Y
+  | baz : Y -> foo X Y
+  | quux : (nat -> foo X Y) -> foo X Y.
+Check foo_ind.
 (** [] *)
 
 (** **** Exercise: 1 star, optional (foo') *)
@@ -686,12 +744,17 @@ Inductive foo' (X:Type) : Type :=
      foo'_ind :
         forall (X : Type) (P : foo' X -> Prop),
               (forall (l : list X) (f : foo' X),
-                    _______________________ -> 
-                    _______________________   ) ->
-             ___________________________________________ ->
-             forall f : foo' X, ________________________
+                    _______________________ -> //P f 
+                    _______________________   ) -> //P (C1 X l f)
+             ___________________________________________ -> P (C2 X)
+             forall f : foo' X, ________________________ // P f
 ]]
 *)
+Check foo'_ind.
+(* foo'_ind *)
+(*      : forall (X : Type) (P : foo' X -> Prop), *)
+(*        (forall (l : list X) (f : foo' X), P f -> P (C1 X l f)) -> *)
+(*        P (C2 X) -> forall f1 : foo' X, P f1 *)
 
 (** [] *)
 
@@ -785,21 +848,28 @@ Inductive ev : nat -> Prop :=
 Theorem four_ev' :
   ev 4.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  repeat (apply ev_SS); apply ev_0.
+Qed.
+
 Definition four_ev : ev 4 :=
-  (* FILL IN HERE *) admit.
+  ev_SS 2 (ev_SS 0 ev_0).
 (** [] *)
 
 (** **** Exercise: 2 stars (ev_plus4) *)
 (** Give a tactic proof and a proof object showing that, if [n] is
     even, then so is [4+n]. *)
 
+Require Import LibTactics.
+
 Definition ev_plus4 : forall n, ev n -> ev (4 + n) :=
-  (* FILL IN HERE *) admit.
+  fun n Heven => ev_SS (2 + n) (ev_SS n Heven).
+
 Theorem ev_plus4' : forall n,
   ev n -> ev (4 + n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  introv Heven.
+  repeat (apply ev_SS). apply Heven.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars (double_even) *)
@@ -808,7 +878,8 @@ Proof.
 Theorem double_even : forall n,
   ev (double n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n as [| n']; simpl; [apply ev_0 | apply ev_SS; apply IHn'].
+Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, optional (double_even_pfobj) *)
@@ -816,6 +887,24 @@ Proof.
     tactic proof.  (Before checking your answer, you'll want to
     strip out any uses of [Case], as these will make the proof
     object look a bit cluttered.) *)
+Check nat_ind.
+(* nat_ind *)
+(*      : forall P : nat -> Prop, *)
+(*        P 0 -> (forall n : nat, P n -> P (S n)) -> forall n : nat, P n *)
+
+Definition double_even' : forall n, ev (double n) :=
+  fun n =>
+    nat_ind (fun n' => ev (double n'))
+            ev_0
+            (fun n' IHn' => ev_SS (double n') IHn') n.
+Print double_even.
+(* double_even =  *)
+(* fun n : nat => *)
+(* nat_ind (fun n0 : nat => ev (double n0)) ev_0 *)
+(*   (fun (n' : nat) (IHn' : ev (double n')) => ev_SS (double n') IHn') n *)
+(*      : forall n : nat, ev (double n) *)
+
+(* Argument scope is [nat_scope] *)
 (** [] *)
 
 (* ####################################################### *)
@@ -862,6 +951,15 @@ Proof.
 (** What happens if we try to [destruct] on [n] instead of [E]? *)
 (** [] *)
 
+Theorem ev_minus2_n: forall n,
+  ev n -> ev (pred (pred n)). 
+Proof.
+  intros n E.
+  destruct n as [|n']; simpl.
+    apply ev_0.
+    destruct n' as [|n'']; simpl. apply ev_0.
+    inversion E. assumption.
+Qed.
 (** We can also perform _induction_ on evidence that [n] is
     even. Here we use it to show that the old [evenb] function
     returns [true] on [n] when [n] is even according to [ev]. *)
@@ -881,6 +979,18 @@ Proof.
 (** **** Exercise: 1 star (ev_even_n) *)
 (** Could this proof be carried out by induction on [n] instead
     of [E]? *)
+Theorem ev_even_n : forall n,
+  ev n -> even n.
+Proof.
+  introv E. induction n as [| n']; unfold even.
+  Case "n = 0". reflexivity.
+  Case "n = S n'".
+    destruct n' as [| n''].
+    SCase "n' = 0".
+      inversion E.
+    SCase "n' = S n''".
+      simpl. inversion E.
+Admitted.
 (** [] *)
 
 (** The induction principle for inductively defined propositions does
@@ -903,8 +1013,8 @@ Proof.
            ...
 ]]
    Briefly explain why.
- 
-(* FILL IN HERE *)
+
+Because the thesis is wrong and the logic is consistent. More specifically, given evidence that n is even, you can only prove that S (S n) is even.
 *)
 (** [] *)
 
@@ -914,7 +1024,12 @@ Proof.
 Theorem ev_sum : forall n m,
    ev n -> ev m -> ev (n+m).
 Proof. 
-  (* FILL IN HERE *) Admitted.
+  introv Hn Hm.
+  induction Hn as [| n' Hn'].
+  Case "Hn = ev0". assumption.
+  Case "Hn = ev_S n' Hn'". simpl.
+  apply ev_SS. apply IHHn'.
+Qed.
 (** [] *)
 
 (** Here's another situation where we want to analyze evidence for
@@ -970,7 +1085,8 @@ Proof.
 Theorem SSSSev_even : forall n,
   ev (S (S (S (S n)))) -> ev n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  introv E. inversion E as [| n' E']. inversion E' as [|n'' E'']. apply E''.
+Qed.
 
 (** The [inversion] tactic can also be used to derive goals by showing
     the absurdity of a hypothesis. *)
@@ -978,7 +1094,8 @@ Proof.
 Theorem even5_nonsense : 
   ev 5 -> 2 + 2 = 9.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  introv E. inversion E as [| n' E']. inversion E' as [| n'' E'']. inversion E''.
+Qed.
 (** [] *)
 
 (** We can generally use [inversion] instead of [destruct] on
@@ -1001,7 +1118,13 @@ Proof.
 Theorem ev_ev_even : forall n m,
   ev (n+m) -> ev n -> ev m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  introv Hnm Hn.
+  induction Hn as [|n' Hn'].
+  Case "Hn = ev_0".
+    simpl in Hnm; assumption.
+  Case "Hn = ev_SS n' Hn'". simpl in Hnm. inversion Hnm as [|nm' Hnm'].
+  apply IHHn'. apply Hnm'.
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, optional (ev_plus_plus) *)
@@ -1013,7 +1136,39 @@ Proof.
 Theorem ev_plus_plus : forall n m p,
   ev (n+m) -> ev (n+p) -> ev (m+p).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  introv Hm Hnp.
+  apply ev_ev_even with (n := double n).
+  Case "ev (double n + (m + p)".
+    replace (double n + (m + p)) with ((n + m) + (n + p)).
+    SCase "ev ((n + m) + (n + p))".
+      apply ev_sum; assumption.
+    dup.
+    SCase "proof of replacement v1".
+      remember (n + m) as nm eqn:Heqnm.
+      remember (n + p) as np eqn:Heqnp.
+      rewrite plus_assoc.
+      rewrite (plus_comm (double n) m).
+      rewrite double_plus.
+      rewrite plus_assoc.
+      rewrite (plus_comm m n).
+      rewrite Heqnm.
+      rewrite Heqnp.
+      rewrite plus_assoc.
+      reflexivity.
+
+    SCase "proof of replacement v2".
+      replace (double n + (m + p)) with (double n + m + p)
+        by (symmetry; apply plus_assoc).
+      replace (double n + m) with (m + double n) by apply plus_comm.
+      rewrite double_plus.
+      replace (m + (n + n)) with (m + n + n) by (symmetry; apply plus_assoc).
+      replace (m + n) with (n + m) by apply plus_comm.
+      rewrite plus_assoc.
+      reflexivity.
+
+  Case "ev (double n)".
+    apply double_even.
+Qed.
 (** [] *)
 
 (* ##################################################### *)
@@ -1077,17 +1232,28 @@ Proof.
   apply MyProp2.
   apply MyProp1.   Qed.
 
+Theorem MyProp_ten_mine : MyProp 10.
+Proof.
+  apply MyProp3. simpl.
+  replace 12 with (4 + 8) by reflexivity.
+  apply MyProp2. 
+  replace 8 with (4 + 4) by reflexivity.
+  apply MyProp2.
+  apply MyProp1.   Qed.
+
 (** **** Exercise: 2 stars (MyProp) *)
 (** Here are two useful facts about MyProp.  The proofs are left
     to you. *)
 
 Theorem MyProp_0 : MyProp 0.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  apply MyProp3. apply MyProp3. apply MyProp1.
+Qed.
 
 Theorem MyProp_plustwo : forall n:nat, MyProp n -> MyProp (S (S n)).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  introv H. apply MyProp3. apply MyProp2. assumption.
+Qed.
 (** [] *)
 
 (** With these, we can show that [MyProp] holds of all even numbers,
@@ -1126,17 +1292,37 @@ Proof.
 Theorem ev_MyProp : forall n:nat, 
   MyProp n -> ev n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  introv E.
+  induction E as [| n' E' | n' E']; [apply (ev_SS _ (ev_SS _ ev_0)) | apply (ev_SS _ (ev_SS _ IHE')) | inversion IHE'; assumption ].
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, optional (ev_MyProp_informal) *)
 (** Write an informal proof corresponding to your
     formal proof of [ev_MyProp]:
  
-    Theorem: For any nat [n], if [MyProp n] then [ev n].
+    Theorem: For any nat [n], if [MyProp n] then [n] is even.
  
-    Proof:
-    (* FILL IN HERE *)
+    Proof: Suppose we are given [n : nat]. We show that if [MyProp n]
+    then [n] is even, by induction on a derivation of [MyProp n].
+
+    - Suppose the final rule used to show [MyProp n] is
+      [MyProp1]. Then [n = 4], which is even.
+
+    - Suppose the final rule used to show [MyProp n] is
+      [MyProp2]. Then [n = 4 + n'] for some [n'] with [MyProp n']. By
+      the induction hypothesis, we have that [n'] is even - but then,
+      (* since 4 is even and the sum of even numbers is even, also [n]
+      is even. *)
+      [To follow the formal proof: ]
+      also [n' + 2] is even, and then also [n' + 4 = n] is even.
+
+    - Suppose the final rule used to show [MyProp n] is
+      [MyProp3]. Then we have [MyProp (2 + n)], and by the induction
+      hypothesis it follows that [2 + n] is even. We can only prove
+      that [2 + n] is even with a proof that [n] is even, so [n] is
+      even as desired.
+
 [] *)
 
 
@@ -1557,6 +1743,14 @@ Proof.
     induction, and state the theorem and proof in terms of this
     defined proposition.  *)
 
+Definition plus_is_assoc (n : nat) := forall m p : nat, 
+  n + (m + p) = (n + m) + p.
+Theorem plus_assoc'': forall n : nat, plus_is_assoc n.
+  induction n as [| n'].
+    Case "n = 0". unfold plus_is_assoc. reflexivity.
+    Case "n = S n'". unfold plus_is_assoc in *. introv.
+    simpl. rewrite IHn'. reflexivity.
+Qed.
 (* FILL IN HERE *)
 (** [] *)
 
@@ -1573,15 +1767,17 @@ Proof.
     [true_upto_n__true_everywhere] that makes
     [true_upto_n_example] work. *)
 
-(* 
-Fixpoint true_upto_n__true_everywhere 
-(* FILL IN HERE *)
+Fixpoint true_upto_n__true_everywhere (n : nat) (P : nat -> Prop) :=
+  match n with
+    | 0 => forall m : nat, P m
+    | S n' => P n -> (true_upto_n__true_everywhere n' P)
+  end.
 
 Example true_upto_n_example :
     (true_upto_n__true_everywhere 3 (fun n => even n))
   = (even 3 -> even 2 -> even 1 -> forall m : nat, even m).
 Proof. reflexivity.  Qed.
-*)
+
 (** [] *)
 
 (* ##################################################### *)
@@ -1695,8 +1891,25 @@ Proof.
 (** Write out the induction principles that Coq will generate for the
     inductive declarations [list] and [MyProp].  Compare your answers
     against the results Coq prints for the following queries. *)
+(* Inductive list (X:Type) : Type :=
+  | nil : list X
+  | cons : X -> list X -> list X. *)
+
+Definition list_ind' :=
+  forall (X : Type) (P : list X -> Prop),
+    P nil ->
+    (forall (x : X) (l : list X), P l -> P (x :: l)) ->
+    forall l : list X, P l.
 
 Check list_ind.
+
+Definition MyProp_ind' :=
+  forall (P : nat -> Prop),
+    P 4 ->
+    (forall n : nat, MyProp n -> P n -> P (4 + n)) ->
+    (forall n : nat, MyProp (2 + n) -> P (2 + n) -> P n) ->
+    forall n : nat, MyProp n -> P n.
+  
 Check MyProp_ind.
 (** [] *)
 
@@ -1708,7 +1921,12 @@ Theorem ev_MyProp' : forall n:nat,
   MyProp n -> ev n.
 Proof.
   apply MyProp_ind.
-  (* FILL IN HERE *) Admitted.
+  Case "n = 4". repeat apply ev_SS. apply ev_0.
+  Case "n = 4 + n'". intro n'. intros.
+  repeat apply ev_SS. assumption.
+  Case "2 + n = n'". intro n. introv M2n ev2n.
+  inversion ev2n. assumption.
+Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, optional (MyProp_pfobj) *)
@@ -1716,7 +1934,46 @@ Proof.
     explicit proof objects by hand (as you did above in
     [ev_plus4], for example). *)
 
-(* FILL IN HERE *)
+Fixpoint MyProp_ev_fix (n:nat) (evN : ev n) : MyProp n :=
+  match evN with
+    | ev_0 => MyProp_0
+    | ev_SS n' evN' => MyProp_plustwo _ (MyProp_ev_fix _ evN')
+  end.
+Check ev_ind.
+Definition MyProp_ev' (n:nat) (evN : ev n) : MyProp n :=
+  ev_ind _ MyProp_0 (fun n' ev_n' M_n' => MyProp_plustwo n' M_n') n evN.
+
+(* http://www.lix.polytechnique.fr/coq/bugs/show_bug.cgi?id=2830
+Definition MyProp_ev'' (n:nat) (evN : ev n) : MyProp n :=
+  ev_ind _ MyProp_0 (fun n' ev_n' M_n' => MyProp_plustwo _ M_n').
+Definition ev_MyProp' (n : nat) (m : MyProp n) : ev n :=
+  MyProp_ind _ (ev_SS _ (ev_SS _ ev_0))
+             (fun n' M_n' ev_n' => ev_SS _ (ev_SS _ ev_n')) _ n m.
+*)
+
+Check ev_MyProp.
+(* ev_MyProp *)
+(*      : forall n : nat, MyProp n -> ev n *)
+Check MyProp_ind.
+(* MyProp_ind *)
+(*      : forall P : nat -> Prop, *)
+(*        P 4 -> *)
+(*        (forall n : nat, MyProp n -> P n -> P (4 + n)) -> *)
+(*        (forall n : nat, MyProp (2 + n) -> P (2 + n) -> P n) -> *)
+(*        forall n : nat, MyProp n -> P n *)
+Check ev_minus2'.
+Print ev_minus2'.
+Print ev_MyProp.
+Definition ev_MyProp'' (n : nat) (m : MyProp n) : ev n :=
+  MyProp_ind _ (ev_SS _ (ev_SS _ ev_0))
+             (fun n' M_n' ev_n' => ev_SS _ (ev_SS n' ev_n'))
+             (fun n' M2n' ev2n' =>
+                match ev2n' return (ev n') with
+                  | ev_0 => admit
+                  | ev_SS n0 b => admit
+                end)
+             n m.
+
 (** [] *)
 
 Module P.
@@ -1765,7 +2022,41 @@ End P.
 ]]
 *)
 
-(* FILL IN HERE *)
+Inductive pal {X} : list X -> Prop :=
+  | pal_0 : pal (@nil X)
+  | pal_center : forall (x : X), pal [x]
+  | pal_add : forall (x : X) (l : list X), pal l -> pal (snoc (x :: l) x).
+
+Theorem pal_constr : forall X (l : list X),
+                       pal (l ++ rev l).
+Proof.
+  introv. induction l as [| x' l']; simpl.
+  Case "l = []". apply pal_0.
+  Case "l = x' :: l'".
+(* snoc_with_append: *)
+(*   forall (X : Type) (l1 l2 : list X) (v : X), *)
+(*   snoc (l1 ++ l2) v = l1 ++ snoc l2 v *)
+    replace (x' :: l' ++ snoc (rev l') x') with (snoc (x' :: (l' ++ rev l')) x').
+    apply pal_add. assumption.
+    SCase "proof of replacement".
+      simpl. rewrite snoc_with_append. reflexivity.
+Qed.
+
+Theorem pal_eq_rev : forall X (l : list X), pal l -> l = rev l.
+Proof.
+  introv palL.
+  induction palL; try reflexivity.
+  Case "pal_add".
+(* rev_snoc *)
+(*      : forall (X : Type) (v : X) (s : list X), rev (snoc s v) = v :: rev s *)
+    assert (x :: snoc l x = snoc (rev (snoc l x)) x) as Thesis.
+
+    replace (snoc (rev (snoc l x)) x) with (x :: snoc (rev l) x) by (rewrite rev_snoc; reflexivity).
+    congruence.
+    (* replace (rev l) with l. (* This applies the assumption automatically. *)
+    reflexivity. *)
+    apply Thesis.
+Qed.
 (** [] *)
 
 (** **** Exercise: 5 stars, optional (palindrome_converse) *)
@@ -1776,6 +2067,78 @@ End P.
 ]]
 *)
 
+Theorem eq_rev_pal : forall X (l : list X), l = rev l -> pal l.
+Proof.
+  introv.
+  induction l as [|x l'].
+  (*remember l as l0.
+  induction l0 as [|x l']. *)
+  Case "l = []". intros. apply pal_0.
+  Case "l = x :: l'". simpl.
+  clear IHl'.
+  remember (rev l') as rl.
+  induction rl as [| x1 rl'].
+  SCase "rl = []". introv eq. inversion eq. apply pal_center.
+  SCase "rl = x1 :: rl'".
+    introv eq.
+    simpl in eq.
+    inversion eq as [[Heq H1]]. clear eq.
+    rewrite <- Heq in *. clear Heq x1.
+    apply pal_add.
+    rewrite H1 in Heqrl.
+    simpl in Heqrl.
+    rewrite rev_snoc in Heqrl.
+    inversion Heqrl as [[H0]]. clear Heqrl.
+    rewrite <- H0 in *.
+    (*
+    SearchAbout rev.
+Theorem rev_involutive : forall X (l : list X),
+  rev (rev l) = l.
+Proof.
+  induction l as [| n l']; simpl; try reflexivity.
+  rewrite rev_snoc.
+  rewrite IHl'. reflexivity.
+Qed.
+
+    Check rev_snoc.
+    rewrite rev_involutive in *.
+
+(* rev_snoc *)
+(*      : forall (X : Type) (v : X) (s : list X), rev (snoc s v) = v :: rev s *)
+    rewrite rev_snoc in *.
+  (* introv eq.
+  induction (rev l') as [| x1 rl'].
+
+  SCase "rl = []". (* introv eq. *) inversion eq. apply pal_center.
+  SCase "rl = x1 :: rl'".
+    (* introv eq. *)
+    simpl in eq.
+    inversion eq as [[Heq H1]]. clear eq.
+    rewrite <- Heq in *. clear Heq x1.
+    apply pal_add.
+    rewrite H1 in Heqrl.
+    simpl in Heqrl.
+    rewrite rev_snoc in Heqrl.
+    inversion Heqrl as [[H0]]. clear Heqrl.
+    rewrite <- H0 in *. *)
+*)
+  Restart.
+  induction l as [|x' l'].
+  Case "l = []". intros. apply pal_0.
+  Case "l = x' :: l'". simpl.
+  induction l' as [|x'' l''].
+  SCase "l' = []". introv H. apply pal_center.
+  SCase "l' = x'' :: l''".
+    simpl in *.
+    introv H.
+Abort.
+
+(*
+  destruct l'.
+  SCase "l' = []".
+  apply pal_center.
+  simpl in eq.
+  simpl in IHl'.*)
 (* FILL IN HERE *)
 (** [] *)
 
@@ -1817,7 +2180,248 @@ End P.
       induction carefully!
 *)
 
-(* FILL IN HERE *)
+Module broken.
+Inductive subseq : list nat -> list nat -> Prop :=
+  | sub_empty : forall l : list nat, subseq [] l
+  | sub_cons : forall (n : nat) (l1 l2 : list nat),
+                 subseq l1 l2 -> subseq l1 (n :: l2)
+  | sub_cc : forall (n : nat) (l1 l2 : list nat),
+                 subseq l1 l2 -> subseq (n :: l1) (n :: l2).
+Check list_ind.
+
+Definition subseq_refl' (l : list nat) : subseq l l :=
+  list_ind _ _ (sub_empty [])
+           (fun n' l' subL => sub_cc n' l' l' subL) l.
+
+Lemma subseq_refl : forall l : list nat, subseq l l.
+Proof.
+  induction l as [| n l'].
+  Case "l = []". apply sub_empty.
+  Case "l = n :: l'".
+    apply sub_cc. assumption.
+Qed.
+
+Theorem subseq_app_easy : forall (l1 l2 l3 : list nat), subseq l1 l3 -> subseq l1 (l2 ++ l3).
+Proof.
+  introv H.
+  induction l2 as [|n l2'].
+  Case "l2 = []". assumption.
+  Case "l2 = n :: l2'".
+    simpl. apply sub_cons. assumption.
+Qed.
+
+Theorem subseq_app : forall (l1 l2 l3 : list nat), subseq l1 l2 -> subseq l1 (l2 ++ l3).
+  introv H.
+  induction l2 as [|n l2'].
+  Case "l2 = []". inversion H. apply sub_empty.
+  Case "l2 = n :: l2'". inversion H as [| |n1 l1'].
+  SCase "sub_empty (l1 = [])". apply sub_empty.
+  SCase "sub_cons". simpl. apply sub_cons. apply IHl2'. assumption.
+  SCase "sub_cc". simpl. rewrite H0 in *. clear H0 n1.
+  apply sub_cc.
+  (* rewrite H1.
+  apply IHl2'. apply sub_cc.  *)
+
+  Restart.
+  introv H.
+  induction l1 as [|n1 l1'].
+  Case "l1 = []". apply sub_empty.
+  Case "l1 = n1 :: l1'".
+    inversion H  as [|n2 l1'' l2' |n2 l2'].
+    SCase "sub_cons".
+    simpl.
+    apply sub_cons. 
+    (* rewrite H2. *)
+  Restart.
+
+  introv H.
+  induction H; simpl; [apply sub_empty | apply sub_cons | apply sub_cc]; assumption.
+Qed.
+
+Lemma subseq_tail: forall n l1 l2, subseq (n :: l1) l2 -> subseq l1 l2.
+Proof.
+  introv.
+  apply subseq_ind with
+    (P := fun l1 l2 => subseq (n :: l1) l2 -> subseq l1 l2) (l := l1) (l0 := l2).
+  admit. admit. admit.
+  Restart.
+  introv H.
+  induction H; [admit | apply sub_cons; assumption | apply sub_cons; assumption ].
+
+  (* Restart.
+
+  introv H.
+  inversion H as [|n2 l1' l2'|].
+  admit.
+  apply sub_cons. assumption. *)
+Qed.
+Print subseq_tail.
+Check subseq_ind.
+
+End broken.
+
+Inductive subseq : list nat -> list nat -> Prop :=
+  | sub_empty : subseq [] []
+  | sub_cons : forall (n : nat) (l1 l2 : list nat),
+                 subseq l1 l2 -> subseq l1 (n :: l2)
+  | sub_cc : forall (n : nat) (l1 l2 : list nat),
+                 subseq l1 l2 -> subseq (n :: l1) (n :: l2).
+
+Definition subseq_refl' (l : list nat) : subseq l l :=
+  list_ind _ _ sub_empty
+           (fun n' l' subL => sub_cc n' l' l' subL) l.
+
+Lemma subseq_refl : forall l : list nat, subseq l l.
+Proof.
+  induction l as [| n l'].
+  Case "l = []". apply sub_empty.
+  Case "l = n :: l'".
+    apply sub_cc. assumption.
+Qed.
+
+Theorem subseq_app_easy : forall (l1 l2 l3 : list nat), subseq l1 l3 -> subseq l1 (l2 ++ l3).
+Proof.
+  introv H.
+  induction l2 as [|n l2'].
+  Case "l2 = []". assumption.
+  Case "l2 = n :: l2'".
+    simpl. apply sub_cons. assumption.
+Qed.
+
+Lemma sub_empty_any : forall l : list nat, subseq [] l.
+Proof.
+  induction l; [apply sub_empty | apply sub_cons; assumption].
+Qed.
+Theorem subseq_app : forall (l1 l2 l3 : list nat), subseq l1 l2 -> subseq l1 (l2 ++ l3).
+  introv H.
+  induction H; simpl; [apply sub_empty_any | apply sub_cons | apply sub_cc]; assumption.
+Qed.
+Definition tail {X} (l:list X) : list X :=
+  match l with
+  | nil => nil  
+  | h :: t => t
+  end.
+
+Lemma subseq_tail' n l1 l2 : subseq (n :: l1) l2 -> subseq l1 l2.
+Proof.
+  (*
+  introv H.
+  remember (n :: l1).
+  cases H as H1; [inversion Heql | |].
+  subst.
+  apply sub_cons.
+  apply subseq_tail' with (n := n). assumption.
+  inversion Heql.
+  subst.
+  apply sub_cons.  assumption.
+  Restart. *)
+  introv H.
+  inverts H.
+  apply sub_cons.
+  (* apply subseq_tail' with (n := n). assumption. *) admit.
+  apply sub_cons. assumption.
+Qed.
+
+Print subseq_tail'.
+(*
+Lemma subseq_tail : forall n l1 l2, subseq (n :: l1) l2 -> subseq l1 l2.
+Proof.
+  introv H.
+  remember (n :: l1).
+  cases H as H1; [inversion Heql | |].
+  subst.
+  apply sub_cons.
+  admit.
+  apply sub_cons. (* assumption. *)
+
+  Restart.
+  introv.
+  replace l1 with (tail (n :: l1)) by reflexivity.
+  replace (n :: tail (n :: l1)) with (n :: l1) by reflexivity.
+  induction (n :: l1).
+  Case "n :: l1 = []". simpl. tauto.
+  Case "n :: l1 = x :: l".
+    generalize dependent l2.
+    generalize dependent x.
+    induction l.
+    SCase "l = []".
+      simpl. intros. apply sub_empty_any.
+    SCase "l = cons".
+      introv H H2.
+      simpl in *.
+  
+  Restart.
+  introv H. 
+  induction l1 as [| n1 l1']; [introv H; apply sub_empty_any | ].
+  introv H.
+  inversions H.
+
+  Restart.
+  introv H.
+  inversion H.
+  (* rewrite <- H2 in *. clear H2 l2. *)
+  apply sub_cons.
+  clear H1 l0.
+  admit.
+  apply sub_cons. assumption.
+  (* apply subseq_ind with
+    (P := fun l1 l2 => subseq (n :: l1) l2 -> subseq l1 l2) (l := l1) (l0 := l2).
+  admit. admit. admit. *)
+  induction H; [admit | apply sub_cons; assumption | apply sub_cons; assumption ].
+(* subseq_ind *)
+(*      : forall P : list nat -> list nat -> Prop, *)
+(*        (forall l : list nat, P [] l) -> *)
+(*        (forall (n : nat) (l1 l2 : list nat), *)
+(*         subseq l1 l2 -> P l1 l2 -> P l1 (n :: l2)) -> *)
+(*        (forall (n : nat) (l1 l2 : list nat), *)
+(*         subseq l1 l2 -> P l1 l2 -> P (n :: l1) (n :: l2)) -> *)
+(*        forall l l0 : list nat, subseq l l0 -> P l l0 *)
+
+Print subseq_ind.
+*)
+Theorem subseq_trans : forall (l1 l2 l3 : list nat), subseq l1 l2 -> subseq l2 l3 -> subseq l1 l3.
+Proof.
+  introv Hs12 Hs23.
+  (*
+  dup.
+
+  induction Hs12 as [| n l1' l2'|].
+  apply sub_empty.
+  admit. admit. *)
+  
+  induction Hs23 as [|n l2'| n l2' l3'].
+  Case "sub_empty".
+  inversion Hs12. apply sub_empty.
+  Case "sub_cons".
+  apply sub_cons. apply IHHs23. apply Hs12.
+  Case "sub_cc".
+    induction l1 as [|n1 l1'].
+    SCase "l1 = []". apply sub_empty_any.
+    SCase "l1 = n1 :: l1'".
+      inversion Hs12.
+      SSCase "sub_cons". clear H2 l2. clear H n0.
+        apply sub_cons. apply IHHs23. apply H1.
+      SSCase "sub_cc".
+        rewrite H2 in *; clear H2 n1.
+        clear H n0.
+        clear H1 l1. clear H3 l2.
+        apply sub_cc.
+        inversion Hs23 as [ | n3 l2'' l3'' |].
+        SSSCase "sub_empty (l2' = [])".
+        rewrite <- H in *. inversion H0. apply sub_empty.
+        SSSCase "sub_cons".
+        subst.
+        apply subseq_tail' with (n := n).
+        apply IHHs23.
+  Restart.
+  introv Hs12 Hs23.
+  induction l2 as [| n2 l2'].
+  inversion Hs12.
+  apply sub_empty_any.
+  inversion Hs12.
+
+  apply IHl2'. assumption.
+Admitted.
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (foo_ind_principle) *)
@@ -1906,6 +2510,16 @@ End P.
     - [R 6 [3,2,1,0]]
 *)
 
+(*
+c2 _ _ c1 : R 1 [0]
+c2 _ _ (c2 _ _ c1) : R 2 [1 , 0]
+*)
+Inductive R : nat -> list nat -> Prop :=
+  | c1 : R 0 []
+  | c2 : forall n l, R n l -> R (S n) (n :: l)
+  | c3 : forall n l, R (S n) l -> R n l.
+
+Definition c221 : R 2 [1, 0] := c2 _ _ (c2 _ _ c1).
 (** [] *)
 
 
