@@ -2046,6 +2046,31 @@ Inductive repeats {X:Type} : list X -> Prop :=
   | rp_base : forall x l, appears_in x l -> repeats (x :: l)
   | rp_cons : forall x l, repeats l -> repeats (x :: l).
 
+
+Lemma pigeonhole_principle_hard: forall {X:Type} (l1 l2:list X),
+  excluded_middle -> 
+  (forall x, appears_in x l1 -> appears_in x l2) -> 
+  length l2 = length l1 -> ~ repeats l1 ->
+  (forall x, appears_in x l2 -> appears_in x l1).
+Proof.
+  intros X l1 l2 excl.
+  intros.
+  gen l1 l2.
+  induction l1.
+  Case "l1 = []".
+  intros.
+  simpl in H0.
+  destruct l2; try assumption.
+  inverts H0.
+  Case "l1 = x0 :: l1".
+  intros.
+  assert (Hexcl := excl (x = x0)).
+  destruct Hexcl.
+  SCase "x = x0".
+  subst. constructor.
+  SCase "x <> x0".
+  constructor.
+Admitted.
 (** Now here's a way to formalize the pigeonhole principle. List [l2]
    represents a list of pigeonhole labels, and list [l1] represents an
    assignment of items to labels: if there are more items than labels,
@@ -2056,16 +2081,63 @@ Theorem pigeonhole_principle: forall {X:Type} (l1 l2:list X),
   excluded_middle -> 
   (forall x, appears_in x l1 -> appears_in x l2) -> 
   length l2 < length l1 -> 
-  repeats l1.  
+  repeats l1.
 Proof.
+(*
+  intros X l1 l2.
+  gen l1.
+  induction l2.
+  Case "l2 = []".
+  intros.
+  destruct l1.
+  inverts H1.
+  assert (Habs := H0 x).
+  apply ex_falso_quodlibet.
+  assert (Happ : appears_in x (x :: l1)). constructor.
+  apply Habs in Happ.
+  inverts Happ.
+  Case "l2 = x :: l2".
+  intro l1.
+  intro Hexcl.
+  intro Hcontained.
+  intro Hlen.
+  apply 
+  apply IHl2 in Hexcl.
+*)
   intros X l1. induction l1; simpl.
+  Case "l1 = []".
 
   introv H0 H1 H2. inversion H2.
-
+  Case "l1 = x :: l1".
   introv excl H1 H2.
-  assert (Hcases := excl (repeats (x :: l1))).
+  inverts H2.
+  SCase "length l2 = length l1".
+  assert (Hcases := excl (repeats l1)).
   inverts Hcases.
-    assumption.
+  SSCase "repeats l1".
+  apply rp_cons. assumption.
+  SSCase "~ (repeats l1)".
+  apply rp_base.
+  assert (appears_in x l2). apply H1. constructor.
+  SSCase "~ (repeats l1)".
+  apply (pigeonhole_principle_hard l1 l2); try assumption.
+  intros.
+  apply H1.
+  constructor. assumption.
+  SCase "length l2 < length l1".
+  apply rp_cons.
+  apply IHl1 with (l2 := l2).
+  assumption.
+  intros x0 app.
+  apply H1.
+  constructor.
+  assumption.
+  assumption.
+(*
+  Check (IHl1 _ excl _ H0).
+  Check H1 x.
+  assert (Hcases := excl (repeats (x :: l1))).
+  inverts Hcases; try assumption.
     
     (* unfold not in *.
     apply ex_falso_quodlibet. *)
@@ -2073,6 +2145,8 @@ Proof.
     apply (H1 x) in Happ.
     assert (Hlemma: (forall x : X, appears_in x l1 -> appears_in x l2)).
     introv Happears.
+    apply H1.
+    constructor. assumption.
     assert (Hcases := excl (x = x0)).
     inverts Hcases.
       assumption.
@@ -2120,6 +2194,7 @@ Lemma Hlemma2: forall {X} (x : X) l1 l2, length l1 = length l2 ->
         constructor. apply Hlemma2.
         SSCase "length l2 < length l1".
         apply rp_cons. apply IHl1 with (l2 := l2); assumption. *)
+*)
 Qed.
 (** [] *)
 
